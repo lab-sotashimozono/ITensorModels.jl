@@ -16,6 +16,7 @@ export Compass1D
 export Hubbard1D
 export AKLT1D
 export TightBindingV1D
+export J1J2Heisenberg1D
 export TFIM, TFIML, XXZ1D, Heisenberg1D, S1Heisenberg1D, KitaevBond, LatticeModel
 export TFIM, TFIML, XXZ1D, Heisenberg1D, KitaevBond, TightBinding1D, LatticeModel
 export AbstractModulation, Uniform, SSD, SinPower, SmoothBoundary, Tabulated
@@ -79,6 +80,7 @@ include("models/heisenberg_s1.jl")
 include("models/hubbard_1d.jl")
 include("models/aklt_1d.jl")
 include("models/tightbinding_v_1d.jl")
+include("models/j1j2_heisenberg_1d.jl")
 include("models/kitaev_bond.jl")
 include("models/xy_h_1d.jl")
 include("models/long_range_ising_1d.jl")
