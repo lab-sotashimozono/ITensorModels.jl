@@ -93,7 +93,7 @@ end
         bond_models=Dict(:nearest => TFIM(; J=J, h=h)),
     )
     env = RadialEnvelope(
-        BoundingBoxCenter(), AxialDistance(1), SinSquareProfile(100 * L)
+        BoundingBoxCenter(), AxialDistance(1), SinSquareProfile(1000 * L)
     )
     mod_nd = modulated_lattice(base_nd; envelope=env)
     MPO_nd_huge = MPO(build_opsum(mod_nd, sites), sites)
@@ -106,6 +106,6 @@ end
         psi = random_mps(rng, sites; linkdims=4)
         e_huge = real(inner(psi', MPO_nd_huge, psi))
         e_unif = real(inner(psi', MPO_uniform, psi))
-        @test e_huge ≈ e_unif atol = 1e-2
+        @test e_huge ≈ e_unif atol = 1e-4
     end
 end

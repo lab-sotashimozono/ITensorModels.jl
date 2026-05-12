@@ -1,6 +1,5 @@
 # ND modulation envelopes — primitives for honeycomb / square / kagome / ...
-# See `notes/plot_modulation/DESIGN.md` for the formalism agreed on
-# 2026-05-12.
+# See `docs/src/design/modulation_nd.md` for the formalism.
 
 """
     AbstractModulationND <: AbstractModulation
@@ -92,6 +91,11 @@ generalisation of 1D SSD along one axis of a cylinder.
 """
 struct AxialDistance <: AbstractDistance
     axis::Int
+
+    function AxialDistance(axis::Int)
+        axis >= 1 || error("AxialDistance: axis must be >= 1, got $axis")
+        return new(axis)
+    end
 end
 
 """
@@ -104,6 +108,11 @@ axis.
 """
 struct PerpendicularDistance <: AbstractDistance
     axis::Int
+
+    function PerpendicularDistance(axis::Int)
+        axis >= 1 || error("PerpendicularDistance: axis must be >= 1, got $axis")
+        return new(axis)
+    end
 end
 
 """
@@ -187,6 +196,27 @@ for `d > R`.
 abstract type AbstractProfile end
 
 """
+    _validate_radius_positive(name, R)
+
+Reject non-positive profile radii. Scalar `R` must be `> 0`; an
+indexable container (e.g. per-axis `SVector` for the axis-product path)
+must have every entry `> 0`. Anything else is rejected outright so that
+a caller passing e.g. `Complex` or `String` is told immediately rather
+than discovering a downstream `MethodError`.
+"""
+function _validate_radius_positive(name::String, R)
+    if R isa Real
+        R > 0 || error("$name: R must be > 0, got R=$R")
+    elseif applicable(iterate, R)
+        all(x -> x isa Real && x > 0, R) ||
+            error("$name: every per-axis R entry must be a positive Real, got R=$R")
+    else
+        error("$name: R must be a positive Real or an iterable of positive Reals, got typeof(R)=$(typeof(R))")
+    end
+    return nothing
+end
+
+"""
     SinSquareProfile(R)
 
 `g(d) = 1 − sin²(π d / (2R)) ≡ cos²(π d / (2R))` on `[0, R]`, zero
@@ -194,7 +224,14 @@ outside. The canonical SSD profile.
 """
 struct SinSquareProfile{R} <: AbstractProfile
     R::R
+
+    function SinSquareProfile{R}(r::R) where {R}
+        _validate_radius_positive("SinSquareProfile", r)
+        return new{R}(r)
+    end
 end
+
+SinSquareProfile(r) = SinSquareProfile{typeof(r)}(r)
 
 """
     SinPowerProfile{N}(R)
@@ -207,13 +244,20 @@ modulations.
 
 Defined as `1 − sin^N` rather than the naive `cos^N`: the naive form
 flips the semantics of `N` (larger `N` would shrink the bulk plateau).
-See `notes/plot_modulation/DESIGN.md` for the worked-out comparison.
+See `docs/src/design/modulation_nd.md` for the worked-out comparison.
 """
 struct SinPowerProfile{N,R} <: AbstractProfile
     R::R
+
+    function SinPowerProfile{N,R}(r::R) where {N,R}
+        N isa Integer && N >= 1 ||
+            error("SinPowerProfile: type parameter N must be an integer >= 1, got N=$N")
+        _validate_radius_positive("SinPowerProfile", r)
+        return new{N,R}(r)
+    end
 end
 
-SinPowerProfile{N}(R::T) where {N,T} = SinPowerProfile{N,T}(R)
+SinPowerProfile{N}(r::T) where {N,T} = SinPowerProfile{N,T}(r)
 
 """
     CosineRampProfile(R, edge)
@@ -228,7 +272,24 @@ Axial / Perpendicular). Axis-product variant is deferred.
 struct CosineRampProfile{R,E} <: AbstractProfile
     R::R
     edge::E
+
+    function CosineRampProfile{R,E}(r::R, e::E) where {R,E}
+        _validate_radius_positive("CosineRampProfile", r)
+        e isa Real ||
+            error("CosineRampProfile: edge must be Real, got typeof(edge)=$(typeof(e))")
+        e > 0 || error("CosineRampProfile: edge must be > 0, got edge=$e")
+        # We only check edge <= R for scalar radii; per-axis CosineRamp is
+        # deferred so a vector R does not reach this constructor in practice.
+        if r isa Real
+            e <= r || error(
+                "CosineRampProfile: edge must satisfy 0 < edge <= R, got edge=$e, R=$r",
+            )
+        end
+        return new{R,E}(r, e)
+    end
 end
+
+CosineRampProfile(r, e) = CosineRampProfile{typeof(r),typeof(e)}(r, e)
 
 # ---------------------------------------------------------------------
 # profile_value
@@ -333,6 +394,54 @@ struct RadialEnvelope{C<:AbstractCenter,D<:AbstractDistance,P<:AbstractProfile} 
     center::C
     distance::D
     profile::P
+
+    function RadialEnvelope{C,D,P}(
+        c::C, d::D, p::P
+    ) where {C<:AbstractCenter,D<:AbstractDistance,P<:AbstractProfile}
+        _validate_envelope_compat(d, p)
+        return new{C,D,P}(c, d, p)
+    end
+end
+
+function RadialEnvelope(
+    c::C, d::D, p::P
+) where {C<:AbstractCenter,D<:AbstractDistance,P<:AbstractProfile}
+    return RadialEnvelope{C,D,P}(c, d, p)
+end
+
+# Reject AxisProductDistance combined with a scalar-radius profile -- the
+# evaluation path indexes p.R[d], which would crash with a raw BoundsError
+# on a Float64. Also reject CosineRampProfile + AxisProductDistance since
+# the tuple-path profile_value(::CosineRampProfile, ::Tuple) is not yet
+# implemented.
+function _validate_envelope_compat(d::AxisProductDistance, p::AbstractProfile)
+    p isa CosineRampProfile && error(
+        "RadialEnvelope: CosineRampProfile combined with AxisProductDistance is " *
+        "not supported yet. Use SinSquareProfile / SinPowerProfile with a per-axis " *
+        "radius container, or pick a scalar distance (Euclidean / Axial / " *
+        "Perpendicular) for the cosine ramp.",
+    )
+    p.R isa Real && error(
+        "RadialEnvelope: AxisProductDistance requires a per-axis radius container " *
+        "in the profile, but profile carries a scalar R=$(p.R)::$(typeof(p.R)). " *
+        "Pass SinSquareProfile([R1, R2, ...]) (or an SVector), or use the " *
+        "rectangular_ssd(lat) factory.",
+    )
+    return nothing
+end
+
+# For scalar distance metrics (Euclidean / Axial / Perpendicular) the
+# profile must carry a scalar R; a vector R would index correctly in the
+# tuple path but never reach it, producing silently-wrong scalar results.
+function _validate_envelope_compat(::AbstractDistance, p::AbstractProfile)
+    p.R isa Real || error(
+        "RadialEnvelope: scalar distance metrics (Euclidean / Axial / " *
+        "Perpendicular) require a scalar profile radius, but profile carries " *
+        "R=$(p.R)::$(typeof(p.R)). Use a scalar SinSquareProfile(R) / " *
+        "SinPowerProfile{N}(R) / CosineRampProfile(R, edge), or pair the " *
+        "per-axis profile with AxisProductDistance().",
+    )
+    return nothing
 end
 
 """

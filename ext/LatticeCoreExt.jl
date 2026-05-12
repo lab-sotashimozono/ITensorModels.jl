@@ -160,6 +160,11 @@ function ITensorModels.center_position(c::ExplicitCenter, lat::AbstractLattice)
         "ExplicitCenter: r has length $(length(c.r)) but lattice has " *
         "dimension $(length(position(lat, 1)))",
     )
+    any(x -> !isfinite(float(x)), c.r) && error(
+        "ExplicitCenter: r contains a non-finite entry (NaN or Inf); " *
+        "got r=$(c.r). A non-finite center silently propagates to all " *
+        "weights, so we reject it at construction.",
+    )
     return c.r
 end
 
@@ -222,21 +227,39 @@ end
     _onsite_submodel_for(m::LatticeModel, k::Int)
 
 Return the submodel whose `onsite_term` is used at lattice site `k`.
-Implementation: pick the bond model attached to any bond touching `k`.
+Iterates the bonds touching `k`; if every touching bond resolves to the
+same submodel (via `_lookup_bond_model`), returns it. If the touching
+bonds resolve to **different** submodels, raises — per-site model
+overrides are not supported yet, and silently picking the first match
+would yield a wrong on-site field on heterogeneous lattices.
+
 All bundled models (`TFIM`, `TFIML`, `XXZ1D`, `Heisenberg1D`) have
-site-uniform on-site terms, so this is well-defined; a model with
-genuinely per-site fields would need a separate accessor.
+site-uniform on-site terms, so on a homogeneous `Dict(:nearest => sub)`
+this collapses to a single submodel as before.
 """
 function _onsite_submodel_for(m::LatticeModel, k::Int)
+    first_sub = nothing
     for b in bonds(m.lattice)
         if b.i == k || b.j == k
-            return _lookup_bond_model(m, b.type)
+            sub = _lookup_bond_model(m, b.type)
+            if first_sub === nothing
+                first_sub = sub
+            elseif !(sub === first_sub)
+                error(
+                    "ModulatedLatticeModel: site $k is touched by bonds resolving " *
+                    "to different submodels ($(typeof(first_sub)) vs $(typeof(sub))). " *
+                    "Per-site model overrides are not yet supported; either make " *
+                    "bond_models map every touching bond type to the same submodel " *
+                    "instance, or wait for a future `onsite_submodel_for_site` accessor.",
+                )
+            end
         end
     end
-    return error(
+    first_sub === nothing && error(
         "ModulatedLatticeModel: no bond touches site $k; cannot resolve " *
         "onsite_term submodel.",
     )
+    return first_sub
 end
 
 """
@@ -265,15 +288,22 @@ function ITensorModels.local_ham_terms(
     lat = base.lattice
     ord = _ordering(base)
     env = m.envelope
+    # Hoist the center evaluation out of the per-bond / per-site loops.
+    # `center_position` is O(N_sites); calling `bond_weight` / `site_weight`
+    # from the loops would recompute it for every term.
+    r_c = ITensorModels.center_position(env.center, lat)
     terms = OpSum[]
     for b in bonds(lat)
         sub = _lookup_bond_model(base, b.type)
-        fb = ITensorModels.bond_weight(env, lat, b.i, b.j)
+        r_mid = (position(lat, b.i) + position(lat, b.j)) / 2
+        d_mid = distance_at_position(env.distance, r_mid, r_c)
+        fb = profile_value(env.profile, d_mid)
         push!(terms, fb * bond_coupling_term(sub, ord[b.i], ord[b.j]))
     end
     for k in 1:num_sites(lat)
         sub = _onsite_submodel_for(base, k)
-        fk = ITensorModels.site_weight(env, lat, k)
+        d_k = distance_at_position(env.distance, position(lat, k), r_c)
+        fk = profile_value(env.profile, d_k)
         push!(terms, fk * onsite_term(sub, ord[k]))
     end
     return terms

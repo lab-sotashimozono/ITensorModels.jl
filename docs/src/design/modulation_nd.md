@@ -172,24 +172,33 @@ produces an `OpSum` equal (up to operator-algebra normalisation) to
 ## Factories (user-facing)
 
 ```julia
-rectangular_ssd(lat; profile=SinSquareProfile, kwargs...)        # axis-product (LatticeCore SSD)
-cylindrical_ssd(lat; axis=1, profile=SinSquareProfile, kwargs...) # axial; uniform on the cylinder
-spherical_ssd(lat; radius=:inscribed, profile=SinSquareProfile, kwargs...)
-spherical_sin_power(lat, N; radius=:inscribed)
-spherical_smooth(lat; edge, radius=:inscribed)
+rectangular_ssd(lat; N=2)                          # axis-product (LatticeCore SSD); SinSquare at N=2
+cylindrical_ssd(lat; axis=1, N=2)                  # axial; uniform on the cylinder
+spherical_ssd(lat; radius=:inscribed, N=2)         # EuclideanDistance + Sin{Square,Power{N}}
 ```
+
+`N` switches between `SinSquareProfile` (the default at `N = 2`) and
+`SinPowerProfile{N}` (`N ≥ 3`). Smooth-boundary (Vekic–White) variants
+are accessible by constructing `RadialEnvelope(..., CosineRampProfile(R, edge))`
+directly; a dedicated `spherical_smooth` factory is not yet shipped.
 
 The `radius` keyword chooses between `:inscribed` (`min(L_d)/2`) and
 `:circumscribed` (`‖(L_d / 2)‖₂`).
 
 ## File plan
 
-- `src/core/modulation_nd.jl` — new file, all primitives + `RadialEnvelope`
+- `src/core/modulation_nd.jl` — all primitives + `RadialEnvelope`
+- `src/core/factories_nd.jl` — generic function declarations for the factories
 - `src/models/modulated_lattice.jl` — `ModulatedLatticeModel` wrapper
-- `ext/LatticeCoreExt.jl` — extend `local_ham_terms` for `ModulatedLatticeModel`
-- `src/ITensorModels.jl` — add includes + exports
-- `test/base/test_modulation_nd.jl` — unit tests for primitives + 1D regression
-- `test/base/test_modulated_lattice.jl` — Hamiltonian build on honeycomb / square
+- `ext/LatticeCoreExt.jl` — lattice-bound methods (`center_position`,
+  `distance_at`, `site_envelope`, `site_weight`, `bond_weight`,
+  `local_ham_terms` for `ModulatedLatticeModel`, plus factory bodies)
+- `src/ITensorModels.jl` — includes + exports
+- `test/base/test_modulation_nd_core.jl` — primitives unit tests (lattice-free)
+- `test/base/test_modulation_nd_lattice.jl` — lattice-bound primitive tests
+- `test/base/test_modulated_lattice.jl` — Hamiltonian build on honeycomb
+- `test/base/test_modulation_nd_1d_equivalence.jl` — ND-on-LineLattice ≡ 1D regression
+- `test/base/test_modulation_nd_factories.jl` — user-facing factory tests
 
 ## Decision log (agreed 2026-05-12)
 
