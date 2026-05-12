@@ -1,6 +1,6 @@
 name = "ITensorModels"
 uuid = "ef2189cb-6e0f-43f0-8f34-d6f851ec88d5"
-version = "0.7.15"
+version = "0.7.16"
 authors = ["sota shimozono <shimozono-sota631@g.ecc.u-tokyo.ac.jp>"]
 
 [deps]
@@ -30,6 +30,7 @@ julia = "1.10"
 
 [extras]
 Lattice2D = "e8031020-b7ff-4f1d-bee4-f79aea4cf140"
+QuasiCrystal = "7178fac9-d2bf-4933-964d-a28131e4f2a4"
 LatticeCore = "84b1cbd8-bc58-4618-bc4f-b46a399f49f1"
 QAtlas = "2bd488d2-d3e6-46ee-afb3-5515643db0c7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -37,4 +38,4 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Lattice2D", "LatticeCore", "QAtlas", "Random", "Statistics", "Test"]
+test = ["Lattice2D", "LatticeCore", "QAtlas", "QuasiCrystal", "Random", "Statistics", "Test"]
