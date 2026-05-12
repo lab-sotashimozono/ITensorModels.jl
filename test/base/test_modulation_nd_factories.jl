@@ -16,7 +16,7 @@ using Test
     # site_weight clips to 0 there.
     ps = collect(LatticeCore.positions(lat))
     rc = ITensorModels.center_position(BoundingBoxCenter(), lat)
-    k_corner = argmax([sqrt(sum((p .- rc).^2)) for p in ps])
+    k_corner = argmax([sqrt(sum((p .- rc) .^ 2)) for p in ps])
     @test ITensorModels.site_weight(env_in, lat, k_corner) ≈ 0.0 atol = 1e-12
 end
 
@@ -27,7 +27,7 @@ end
     @test env_out.profile isa SinSquareProfile
     ps = collect(LatticeCore.positions(lat))
     rc = ITensorModels.center_position(BoundingBoxCenter(), lat)
-    distances = [sqrt(sum((p .- rc).^2)) for p in ps]
+    distances = [sqrt(sum((p .- rc) .^ 2)) for p in ps]
     d_max = maximum(distances)
     for k in 1:num_sites(lat)
         w = ITensorModels.site_weight(env_out, lat, k)
@@ -97,7 +97,7 @@ end
 
     ps = collect(LatticeCore.positions(lat))
     rc = ITensorModels.center_position(BoundingBoxCenter(), lat)
-    k_central = argmin([sqrt(sum((p .- rc).^2)) for p in ps])
+    k_central = argmin([sqrt(sum((p .- rc) .^ 2)) for p in ps])
     @test 0.0 <= ITensorModels.site_weight(env, lat, k_central) <= 1.0
     @test ITensorModels.site_weight(env, lat, k_central) >= 0.85
 end

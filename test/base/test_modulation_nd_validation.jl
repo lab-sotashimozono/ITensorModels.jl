@@ -88,9 +88,7 @@ end
 
 @testset "RadialEnvelope: CosineRampProfile + AxisProductDistance unsupported" begin
     @test_throws ErrorException RadialEnvelope(
-        BoundingBoxCenter(),
-        AxisProductDistance(),
-        CosineRampProfile(5.0, 1.0),
+        BoundingBoxCenter(), AxisProductDistance(), CosineRampProfile(5.0, 1.0)
     )
 end
 
@@ -143,8 +141,7 @@ end
     lat = Lattice2D.honeycomb(6, 6; boundary=OpenAxis())
     ps = collect(LatticeCore.positions(lat))
     Ry = maximum(
-        abs(p[2] - ITensorModels.center_position(BoundingBoxCenter(), lat)[2])
-        for p in ps
+        abs(p[2] - ITensorModels.center_position(BoundingBoxCenter(), lat)[2]) for p in ps
     )
     env = RadialEnvelope(
         BoundingBoxCenter(), PerpendicularDistance(1), SinSquareProfile(Ry)

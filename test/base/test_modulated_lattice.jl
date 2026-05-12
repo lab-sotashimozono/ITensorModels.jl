@@ -7,15 +7,8 @@ using Test
 
 @testset "ModulatedLatticeModel: construction" begin
     lat = Lattice2D.honeycomb(4, 4; boundary=OpenAxis())
-    base = LatticeModel(;
-        lattice=lat,
-        bond_models=Dict(:nearest => Heisenberg1D(; J=1.0)),
-    )
-    env = RadialEnvelope(
-        BoundingBoxCenter(),
-        EuclideanDistance(),
-        SinSquareProfile(5.0),
-    )
+    base = LatticeModel(; lattice=lat, bond_models=Dict(:nearest => Heisenberg1D(; J=1.0)))
+    env = RadialEnvelope(BoundingBoxCenter(), EuclideanDistance(), SinSquareProfile(5.0))
     mod = modulated_lattice(base; envelope=env)
     @test mod isa ModulatedLatticeModel
     @test mod isa AbstractLatticeModel
@@ -26,13 +19,10 @@ end
 
 @testset "ModulatedLatticeModel: build_opsum on honeycomb" begin
     lat = Lattice2D.honeycomb(4, 4; boundary=OpenAxis())
-    base = LatticeModel(;
-        lattice=lat,
-        bond_models=Dict(:nearest => Heisenberg1D(; J=1.0)),
-    )
+    base = LatticeModel(; lattice=lat, bond_models=Dict(:nearest => Heisenberg1D(; J=1.0)))
     ps = collect(LatticeCore.positions(lat))
     rc = ITensorModels.center_position(BoundingBoxCenter(), lat)
-    R = sqrt(maximum(sum((p .- rc).^2) for p in ps)) + 0.5
+    R = sqrt(maximum(sum((p .- rc) .^ 2) for p in ps)) + 0.5
     env = RadialEnvelope(BoundingBoxCenter(), EuclideanDistance(), SinSquareProfile(R))
     mod = modulated_lattice(base; envelope=env)
 
@@ -52,9 +42,8 @@ end
     H_ref = OpSum()
     for b in bonds(lat)
         fb = ITensorModels.bond_weight(env, lat, b.i, b.j)
-        H_ref += fb * ITensorModels.bond_coupling_term(
-            Heisenberg1D(; J=1.0), ord[b.i], ord[b.j]
-        )
+        H_ref +=
+            fb * ITensorModels.bond_coupling_term(Heisenberg1D(; J=1.0), ord[b.i], ord[b.j])
     end
     ref_terms = collect(ITensors.terms(H_ref))
     @test length(ref_terms) > 0
@@ -73,7 +62,7 @@ end
     lat = Lattice2D.honeycomb(4, 4; boundary=OpenAxis())
     ps = collect(LatticeCore.positions(lat))
     rc = ITensorModels.center_position(BoundingBoxCenter(), lat)
-    R_huge = 1000 * sqrt(maximum(sum((p .- rc).^2) for p in ps))
+    R_huge = 1000 * sqrt(maximum(sum((p .- rc) .^ 2) for p in ps))
     env = RadialEnvelope(BoundingBoxCenter(), EuclideanDistance(), SinSquareProfile(R_huge))
 
     for b in bonds(lat)
@@ -91,14 +80,14 @@ end
     lat = Lattice2D.honeycomb(6, 6; boundary=OpenAxis())
     ps = collect(LatticeCore.positions(lat))
     rc = ITensorModels.center_position(BoundingBoxCenter(), lat)
-    R = sqrt(maximum(sum((p .- rc).^2) for p in ps))
+    R = sqrt(maximum(sum((p .- rc) .^ 2) for p in ps))
     env = RadialEnvelope(BoundingBoxCenter(), EuclideanDistance(), SinSquareProfile(R))
 
     bs = collect(bonds(lat))
     w_corner = ITensorModels.bond_weight(env, lat, bs[1].i, bs[1].j)
 
     midpoints = [(position(lat, b.i) + position(lat, b.j)) / 2 for b in bs]
-    distances = [sqrt(sum((mid .- rc).^2)) for mid in midpoints]
+    distances = [sqrt(sum((mid .- rc) .^ 2)) for mid in midpoints]
     k_central = argmin(distances)
     w_centre = ITensorModels.bond_weight(env, lat, bs[k_central].i, bs[k_central].j)
 
@@ -113,13 +102,10 @@ end
     # count (which would be all we'd get if onsite emission were
     # missing).
     lat = Lattice2D.honeycomb(4, 4; boundary=OpenAxis())
-    base = LatticeModel(;
-        lattice=lat,
-        bond_models=Dict(:nearest => TFIM(; J=1.0, h=0.5)),
-    )
+    base = LatticeModel(; lattice=lat, bond_models=Dict(:nearest => TFIM(; J=1.0, h=0.5)))
     ps = collect(LatticeCore.positions(lat))
     rc = ITensorModels.center_position(BoundingBoxCenter(), lat)
-    R_huge = 1000 * sqrt(maximum(sum((p .- rc).^2) for p in ps))
+    R_huge = 1000 * sqrt(maximum(sum((p .- rc) .^ 2) for p in ps))
     env = RadialEnvelope(BoundingBoxCenter(), EuclideanDistance(), SinSquareProfile(R_huge))
     mod = modulated_lattice(base; envelope=env)
 
