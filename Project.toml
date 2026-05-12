@@ -1,6 +1,6 @@
 name = "ITensorModels"
 uuid = "ef2189cb-6e0f-43f0-8f34-d6f851ec88d5"
-version = "0.7.3"
+version = "0.7.4"
 authors = ["sota shimozono <shimozono-sota631@g.ecc.u-tokyo.ac.jp>"]
 
 [deps]
