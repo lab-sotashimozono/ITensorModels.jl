@@ -28,8 +28,7 @@ end
     m = S1Heisenberg1D(; J=0.8)
     H_bond = bond_term(m, 3, 4)
     H_coup = bond_coupling_term(m, 3, 4)
-    @test length(collect(ITensors.terms(H_bond))) ==
-        length(collect(ITensors.terms(H_coup)))
+    @test length(collect(ITensors.terms(H_bond))) == length(collect(ITensors.terms(H_coup)))
     @test length(collect(ITensors.terms(onsite_term(m, 1)))) == 0
 end
 

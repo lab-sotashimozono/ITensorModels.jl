@@ -62,6 +62,22 @@ function ITensorModels.from_qatlas(::QAtlas.Heisenberg1D)
     return ITensorModels.Heisenberg1D()
 end
 
+# --- S1Heisenberg1D ----------------------------------------------------
+
+function ITensorModels.to_qatlas(m::ITensorModels.S1Heisenberg1D)
+    ITensorModels.to_qatlas(m, m.site)
+end
+
+# QAtlas.S1Heisenberg1D uses the same J coefficient on spin-1 Sx/Sy/Sz
+# matrices (eigenvalues -1, 0, +1) -- no rescaling needed.
+function ITensorModels.to_qatlas(m::ITensorModels.S1Heisenberg1D, ::SiteType"S=1")
+    return QAtlas.S1Heisenberg1D(; J=m.J)
+end
+
+function ITensorModels.from_qatlas(qm::QAtlas.S1Heisenberg1D)
+    return ITensorModels.S1Heisenberg1D(; J=qm.J)
+end
+
 # --- fetch forwarder ----------------------------------------------------
 #
 # Route `QAtlas.fetch` calls that take an ITensorModels model through
