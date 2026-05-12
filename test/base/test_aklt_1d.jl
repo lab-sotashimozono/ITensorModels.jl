@@ -52,8 +52,29 @@ end
     H = MPO(build_opsum(m, sites; phys_sites=1:N, boundary=:full), sites)
     psi0 = random_mps(MersenneTwister(0xa1), sites; linkdims=8)
     sweeps = Sweeps(20)
-    maxdim!(sweeps, 10, 20, 40, 80, 100, 100, 100, 100, 100, 100,
-        100, 100, 100, 100, 100, 100, 100, 100, 100, 100)
+    maxdim!(
+        sweeps,
+        10,
+        20,
+        40,
+        80,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+    )
     cutoff!(sweeps, 1e-12)
     E, _ = dmrg(H, psi0, sweeps; outputlevel=0)
     @test isfinite(E)
