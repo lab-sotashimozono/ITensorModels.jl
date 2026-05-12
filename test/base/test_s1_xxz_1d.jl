@@ -22,7 +22,7 @@ end
 @testset "S1XXZ1D: Delta=1 all coefficients equal J" begin
     m = S1XXZ1D(; J=1.0, Delta=1.0)
     H = bond_term(m, 1, 2)
-    coefs = sort([ITensors.coefficient(t) for t in ITensors.terms(H)])
+    coefs = sort([real(ITensors.coefficient(t)) for t in ITensors.terms(H)])
     @test coefs == [1.0, 1.0, 1.0]
 end
 
@@ -30,7 +30,7 @@ end
     J, Delta = 1.0, 2.0
     m = S1XXZ1D(; J=J, Delta=Delta)
     H = bond_term(m, 1, 2)
-    coefs = sort([ITensors.coefficient(t) for t in ITensors.terms(H)])
+    coefs = sort([real(ITensors.coefficient(t)) for t in ITensors.terms(H)])
     @test coefs ≈ sort([J, J, J * Delta])
 end
 
