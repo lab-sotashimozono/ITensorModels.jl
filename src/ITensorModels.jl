@@ -8,7 +8,7 @@ export AbstractLatticeModel, site_type
 export bond_term, boundary_patch, local_ham_terms, build_opsum
 export bond_coupling_term, onsite_term
 export onsite_observable_op, build_onsite_observable_opsum
-export TFIM, TFIML, XXZ1D, Heisenberg1D, KitaevBond, LatticeModel
+export TFIM, TFIML, XXZ1D, Heisenberg1D, KitaevBond, TightBinding1D, LatticeModel
 export AbstractModulation, Uniform, SSD, SinPower, SmoothBoundary, Tabulated
 export site_weight, bond_weight
 export ModulatedModel, modulated
@@ -67,6 +67,7 @@ include("models/tfiml.jl")
 include("models/xxz.jl")
 include("models/heisenberg.jl")
 include("models/kitaev_bond.jl")
+include("models/tightbinding_1d.jl")
 include("models/lattice_model.jl")
 include("models/modulated.jl")
 include("models/modulated_lattice.jl")
