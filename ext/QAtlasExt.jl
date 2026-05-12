@@ -78,7 +78,6 @@ function ITensorModels.from_qatlas(qm::QAtlas.S1Heisenberg1D)
     return ITensorModels.S1Heisenberg1D(; J=qm.J)
 end
 
-
 # --- AKLT1D -------------------------------------------------------------
 
 ITensorModels.to_qatlas(m::ITensorModels.AKLT1D) = ITensorModels.to_qatlas(m, m.site)
@@ -102,11 +101,11 @@ ITensorModels.to_qatlas(m::ITensorModels.Hubbard1D) = ITensorModels.to_qatlas(m,
 #   QAtlas writes        H = -t Σ hop + U Σ n↑n↓ - μ Σ n  (half-filling μ = +U/2)
 # Same physical Hamiltonian, so the bridge negates μ.
 function ITensorModels.to_qatlas(m::ITensorModels.Hubbard1D, ::SiteType"Electron")
-    return QAtlas.Hubbard1D(; t=m.t, U=m.U, μ=-m.μ)
+    return QAtlas.Hubbard1D(; t=m.t, U=m.U, μ=(-m.μ))
 end
 
 function ITensorModels.from_qatlas(qm::QAtlas.Hubbard1D)
-    return ITensorModels.Hubbard1D(; t=qm.t, U=qm.U, μ=-qm.μ)
+    return ITensorModels.Hubbard1D(; t=qm.t, U=qm.U, μ=(-qm.μ))
 end
 
 # --- fetch forwarder ----------------------------------------------------
