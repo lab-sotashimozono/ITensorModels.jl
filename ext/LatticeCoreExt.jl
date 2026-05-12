@@ -5,7 +5,10 @@ using ITensorModels
 using ITensorModels:
     AbstractLatticeModel,
     LatticeModel,
+    ModulatedLatticeModel,
     bond_term,
+    bond_coupling_term,
+    onsite_term,
     local_ham_terms,
     boundary_patch,
     AbstractModulationND,
@@ -53,7 +56,7 @@ function _lookup_bond_model(m::LatticeModel, bt::Symbol)
 end
 
 # ---------------------------------------------------------------------
-# local_ham_terms / build_opsum for LatticeModel
+# local_ham_terms / build_opsum
 # ---------------------------------------------------------------------
 
 """
@@ -185,7 +188,7 @@ function ITensorModels.site_envelope(env::RadialEnvelope, lat::AbstractLattice, 
 end
 
 """
-    site_weight(env::RadialEnvelope, lat::AbstractLattice, k::Int)
+    site_weight(env::AbstractModulationND, lat::AbstractLattice, k::Int)
 
 ND `site_weight`: equals `site_envelope(env, lat, k)`. This is the
 ND-signature companion to the 1D `site_weight(mod, i::Int, L::Int)`.
@@ -195,11 +198,12 @@ function ITensorModels.site_weight(env::RadialEnvelope, lat::AbstractLattice, k:
 end
 
 """
-    bond_weight(env::RadialEnvelope, lat::AbstractLattice, i::Int, j::Int)
+    bond_weight(env::AbstractModulationND, lat::AbstractLattice, i::Int, j::Int)
 
-ND `bond_weight`: midpoint evaluation `f((r_i + r_j) / 2)`. Matches the
-1D convention `bond_weight(SSD, i, L) = sin²(π i / L)` (sites at
-half-integer positions, bond midpoints at integers).
+ND `bond_weight`: midpoint evaluation
+`f((r_i + r_j) / 2)`. Matches the 1D convention
+`bond_weight(SSD, i, L) = sin²(π i / L)` (sites at half-integer
+positions, bond midpoints at integers).
 """
 function ITensorModels.bond_weight(
     env::RadialEnvelope, lat::AbstractLattice, i::Int, j::Int
@@ -208,6 +212,88 @@ function ITensorModels.bond_weight(
     r_mid = (position(lat, i) + position(lat, j)) / 2
     d = distance_at_position(env.distance, r_mid, r_c)
     return profile_value(env.profile, d)
+end
+
+# ---------------------------------------------------------------------
+# ModulatedLatticeModel local_ham_terms
+# ---------------------------------------------------------------------
+
+"""
+    _onsite_submodel_for(m::LatticeModel, k::Int)
+
+Return the submodel whose `onsite_term` is used at lattice site `k`.
+Implementation: pick the bond model attached to any bond touching `k`.
+All bundled models (`TFIM`, `TFIML`, `XXZ1D`, `Heisenberg1D`) have
+site-uniform on-site terms, so this is well-defined; a model with
+genuinely per-site fields would need a separate accessor.
+"""
+function _onsite_submodel_for(m::LatticeModel, k::Int)
+    for b in bonds(m.lattice)
+        if b.i == k || b.j == k
+            return _lookup_bond_model(m, b.type)
+        end
+    end
+    return error(
+        "ModulatedLatticeModel: no bond touches site $k; cannot resolve " *
+        "onsite_term submodel.",
+    )
+end
+
+"""
+    local_ham_terms(m::ModulatedLatticeModel{<:LatticeModel{<:AbstractLattice}}, _; boundary)
+
+ND modulation pipeline. Iterate the lattice'`s bonds, weighting each
+`bond_coupling_term` by `bond_weight(env, lat, i, j)` (midpoint
+evaluation); then iterate sites, weighting each `onsite_term` by
+`site_weight(env, lat, k)`. Bond and on-site contributions are emitted
+as separate `OpSum`s — no half-distribution, no `boundary_patch`.
+
+`phys_sites` is ignored (the lattice graph provides connectivity).
+`boundary` is accepted for interface compatibility but currently must
+be `:full`.
+"""
+function ITensorModels.local_ham_terms(
+    m::ModulatedLatticeModel{<:LatticeModel{<:AbstractLattice}}, phys_sites;
+    boundary::Symbol=:full,
+)
+    boundary === :full || error(
+        "ModulatedLatticeModel currently supports only boundary = :full " *
+        "(got $boundary).",
+    )
+    base = m.base
+    lat = base.lattice
+    ord = _ordering(base)
+    env = m.envelope
+    terms = OpSum[]
+    for b in bonds(lat)
+        sub = _lookup_bond_model(base, b.type)
+        fb = ITensorModels.bond_weight(env, lat, b.i, b.j)
+        push!(terms, fb * bond_coupling_term(sub, ord[b.i], ord[b.j]))
+    end
+    for k in 1:num_sites(lat)
+        sub = _onsite_submodel_for(base, k)
+        fk = ITensorModels.site_weight(env, lat, k)
+        push!(terms, fk * onsite_term(sub, ord[k]))
+    end
+    return terms
+end
+
+"""
+    build_opsum(m::ModulatedLatticeModel{<:LatticeModel{<:AbstractLattice}}, sites;
+                phys_sites=nothing, boundary=:full)
+
+Sum every term produced by [`local_ham_terms`](@ref) for the modulated
+lattice model into the full `OpSum`.
+"""
+function ITensorModels.build_opsum(
+    m::ModulatedLatticeModel{<:LatticeModel{<:AbstractLattice}}, sites;
+    phys_sites=nothing, boundary::Symbol=:full,
+)
+    opsum = OpSum()
+    for t in ITensorModels.local_ham_terms(m, phys_sites; boundary)
+        opsum += t
+    end
+    return opsum
 end
 
 end # module LatticeCoreExt

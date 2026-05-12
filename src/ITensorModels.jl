@@ -12,6 +12,7 @@ export TFIM, TFIML, XXZ1D, Heisenberg1D, KitaevBond, LatticeModel
 export AbstractModulation, Uniform, SSD, SinPower, SmoothBoundary, Tabulated
 export site_weight, bond_weight
 export ModulatedModel, modulated
+export ModulatedLatticeModel, modulated_lattice
 export AbstractModulationND
 export AbstractCenter, GeometricCenter, BoundingBoxCenter, ExplicitCenter
 export AbstractDistance,
@@ -66,5 +67,6 @@ include("models/heisenberg.jl")
 include("models/kitaev_bond.jl")
 include("models/lattice_model.jl")
 include("models/modulated.jl")
+include("models/modulated_lattice.jl")
 
 end # module ITensorModels
