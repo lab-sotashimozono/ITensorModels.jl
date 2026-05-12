@@ -12,6 +12,13 @@ export TFIM, TFIML, XXZ1D, Heisenberg1D, KitaevBond, LatticeModel
 export AbstractModulation, Uniform, SSD, SinPower, SmoothBoundary, Tabulated
 export site_weight, bond_weight
 export ModulatedModel, modulated
+export AbstractModulationND
+export AbstractCenter, GeometricCenter, BoundingBoxCenter, ExplicitCenter
+export AbstractDistance, EuclideanDistance, AxialDistance, PerpendicularDistance,
+    AxisProductDistance
+export AbstractProfile, SinSquareProfile, SinPowerProfile, CosineRampProfile
+export RadialEnvelope
+export distance_at_position, distance_at, center_position, profile_value, site_envelope
 export to_qatlas, from_qatlas
 
 """
@@ -50,6 +57,7 @@ function from_qatlas end
 include("core/interface.jl")
 include("core/observables.jl")
 include("core/modulation.jl")
+include("core/modulation_nd.jl")
 
 include("models/tfim.jl")
 include("models/tfiml.jl")
