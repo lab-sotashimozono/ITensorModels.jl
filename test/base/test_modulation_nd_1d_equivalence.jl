@@ -21,9 +21,7 @@ using Test
     # BoundingBoxCenter at (L+1)/2) with SinSquareProfile(L/2) is
     # designed to match the 1D SSD weights exactly.
     lat = LineLattice(L, OpenAxis())
-    env = RadialEnvelope(
-        BoundingBoxCenter(), AxialDistance(1), SinSquareProfile(L / 2)
-    )
+    env = RadialEnvelope(BoundingBoxCenter(), AxialDistance(1), SinSquareProfile(L / 2))
 
     # site_weight on ND ≡ 1D site_weight(SSD, k, L).
     for k in 1:L
@@ -55,13 +53,8 @@ end
 
     # ND path: LineLattice + LatticeModel(TFIM) + RadialEnvelope.
     lat = LineLattice(L, OpenAxis())
-    base_nd = LatticeModel(;
-        lattice=lat,
-        bond_models=Dict(:nearest => TFIM(; J=J, h=h)),
-    )
-    env = RadialEnvelope(
-        BoundingBoxCenter(), AxialDistance(1), SinSquareProfile(L / 2)
-    )
+    base_nd = LatticeModel(; lattice=lat, bond_models=Dict(:nearest => TFIM(; J=J, h=h)))
+    env = RadialEnvelope(BoundingBoxCenter(), AxialDistance(1), SinSquareProfile(L / 2))
     mod_nd = modulated_lattice(base_nd; envelope=env)
     H_nd_opsum = build_opsum(mod_nd, sites)
     MPO_nd = MPO(H_nd_opsum, sites)
@@ -88,18 +81,15 @@ end
     sites = siteinds("S=1/2", L)
 
     lat = LineLattice(L, OpenAxis())
-    base_nd = LatticeModel(;
-        lattice=lat,
-        bond_models=Dict(:nearest => TFIM(; J=J, h=h)),
-    )
-    env = RadialEnvelope(
-        BoundingBoxCenter(), AxialDistance(1), SinSquareProfile(1000 * L)
-    )
+    base_nd = LatticeModel(; lattice=lat, bond_models=Dict(:nearest => TFIM(; J=J, h=h)))
+    env = RadialEnvelope(BoundingBoxCenter(), AxialDistance(1), SinSquareProfile(1000 * L))
     mod_nd = modulated_lattice(base_nd; envelope=env)
     MPO_nd_huge = MPO(build_opsum(mod_nd, sites), sites)
 
     mod_uniform = modulated(TFIM(; J=J, h=h); L=L, modulation=Uniform())
-    MPO_uniform = MPO(build_opsum(mod_uniform, sites; phys_sites=1:L, boundary=:full), sites)
+    MPO_uniform = MPO(
+        build_opsum(mod_uniform, sites; phys_sites=1:L, boundary=:full), sites
+    )
 
     rng = MersenneTwister(0x9c1f)
     for trial in 1:3

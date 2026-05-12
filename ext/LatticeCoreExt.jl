@@ -381,23 +381,17 @@ function ITensorModels.spherical_ssd(
     elseif radius === :circumscribed
         sqrt(sum(half .^ 2))
     else
-        error(
-            "spherical_ssd: radius must be :inscribed or :circumscribed " *
-            "(got :$radius)",
-        )
+        error("spherical_ssd: radius must be :inscribed or :circumscribed " * "(got :$radius)")
     end
     return RadialEnvelope(
         BoundingBoxCenter(), EuclideanDistance(), _make_profile(Val(N), R)
     )
 end
 
-function ITensorModels.cylindrical_ssd(
-    lat::AbstractLattice; axis::Int=1, N::Int=2
-)
+function ITensorModels.cylindrical_ssd(lat::AbstractLattice; axis::Int=1, N::Int=2)
     lo, hi = _bounding_extent(lat)
-    1 <= axis <= length(lo) || error(
-        "cylindrical_ssd: axis=$axis out of range [1, $(length(lo))]"
-    )
+    1 <= axis <= length(lo) ||
+        error("cylindrical_ssd: axis=$axis out of range [1, $(length(lo))]")
     R = (hi[axis] - lo[axis]) / 2
     return RadialEnvelope(
         BoundingBoxCenter(), AxialDistance(axis), _make_profile(Val(N), R)

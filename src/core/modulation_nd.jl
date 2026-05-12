@@ -206,7 +206,9 @@ function _validate_radius_positive(name::String, R)
         all(x -> x isa Real && x > 0, R) ||
             error("$name: every per-axis R entry must be a positive Real, got R=$R")
     else
-        error("$name: R must be a positive Real or an iterable of positive Reals, got typeof(R)=$(typeof(R))")
+        error(
+            "$name: R must be a positive Real or an iterable of positive Reals, got typeof(R)=$(typeof(R))",
+        )
     end
     return nothing
 end
@@ -277,7 +279,7 @@ struct CosineRampProfile{R,E} <: AbstractProfile
         # deferred so a vector R does not reach this constructor in practice.
         if r isa Real
             e <= r || error(
-                "CosineRampProfile: edge must satisfy 0 < edge <= R, got edge=$e, R=$r",
+                "CosineRampProfile: edge must satisfy 0 < edge <= R, got edge=$e, R=$r"
             )
         end
         return new{R,E}(r, e)
