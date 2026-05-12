@@ -381,9 +381,10 @@ and is the analogue — not a literal port — of the 1D
 `bond_weight(SSD, i, L) = sin²(π i / L)` rule, where on the unit-spacing
 1D chain the integer bond index `i` happens to coincide with the
 Cartesian midpoint of the bond. The two conventions agree on the
-unit-spacing 1D chain and intentionally diverge from LatticeCore's
-two-endpoint arithmetic mean `(f(r_i) + f(r_j)) / 2`; see decision D2
-in `docs/src/design/modulation_nd.md`.
+unit-spacing 1D chain. The choice of midpoint evaluation (rather than
+LatticeCore's two-endpoint arithmetic mean `(f(r_i) + f(r_j)) / 2`) is
+recorded as decision D2 in `docs/src/design/modulation_nd.md`; the
+prose of that document gives the full motivation.
 """
 struct RadialEnvelope{C<:AbstractCenter,D<:AbstractDistance,P<:AbstractProfile} <:
        AbstractModulationND
@@ -481,27 +482,41 @@ function distance_at end
 # lattice argument; the extension's `AbstractLattice` methods are
 # strictly more specific and take precedence when loaded.
 
-const _LATTICE_EXT_HINT =
-    "lives in the `LatticeCoreExt` package extension. Add `LatticeCore` " *
-    "to your project and load it (`using LatticeCore`) before constructing " *
-    "lattice-bound modulation envelopes."
+"""
+    _missing_lat_msg(sig, lat) -> String
+
+Build the error string for an extension-missing fallback. Names the
+function signature, reports `typeof(lat)`, and instructs the user to
+load `LatticeCore`. Covers both possible diagnoses: the caller may
+have forgotten `using LatticeCore`, *or* the extension is already
+loaded but they passed a non-`AbstractLattice` value where one was
+expected.
+"""
+function _missing_lat_msg(sig::AbstractString, lat)
+    return "$(sig): no method for lat::$(typeof(lat)). This function is " *
+           "supplied by the `LatticeCoreExt` package extension and only " *
+           "defines methods on `LatticeCore.AbstractLattice`. If you have " *
+           "not yet loaded LatticeCore, add it to your project and " *
+           "`using LatticeCore`. If LatticeCore is loaded, check the " *
+           "`lat` argument — it must be an `AbstractLattice`."
+end
 
 function center_position(::AbstractCenter, lat)
-    return error("center_position(::AbstractCenter, lat) " * _LATTICE_EXT_HINT)
+    return error(_missing_lat_msg("center_position(::AbstractCenter, lat)", lat))
 end
 
 function distance_at(::AbstractDistance, lat, ::Int, _r_c)
-    return error("distance_at(::AbstractDistance, lat, k, r_c) " * _LATTICE_EXT_HINT)
+    return error(_missing_lat_msg("distance_at(::AbstractDistance, lat, k, r_c)", lat))
 end
 
 function site_envelope(::RadialEnvelope, lat, ::Int)
-    return error("site_envelope(::RadialEnvelope, lat, k) " * _LATTICE_EXT_HINT)
+    return error(_missing_lat_msg("site_envelope(::RadialEnvelope, lat, k)", lat))
 end
 
 function site_weight(::AbstractModulationND, lat, ::Int)
-    return error("site_weight(::AbstractModulationND, lat, k) " * _LATTICE_EXT_HINT)
+    return error(_missing_lat_msg("site_weight(::AbstractModulationND, lat, k)", lat))
 end
 
 function bond_weight(::AbstractModulationND, lat, ::Int, ::Int)
-    return error("bond_weight(::AbstractModulationND, lat, i, j) " * _LATTICE_EXT_HINT)
+    return error(_missing_lat_msg("bond_weight(::AbstractModulationND, lat, i, j)", lat))
 end

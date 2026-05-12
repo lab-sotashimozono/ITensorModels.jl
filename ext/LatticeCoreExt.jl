@@ -197,10 +197,11 @@ end
 """
     bond_weight(env::AbstractModulationND, lat::AbstractLattice, i::Int, j::Int)
 
-ND `bond_weight`: midpoint evaluation
-`f((r_i + r_j) / 2)`. Matches the 1D convention
-`bond_weight(SSD, i, L) = sin²(π i / L)` (sites at half-integer
-positions, bond midpoints at integers).
+ND `bond_weight`: geometric midpoint evaluation `f((r_i + r_j) / 2)`.
+This is the Cartesian-position analogue of the 1D rule
+`bond_weight(SSD, i, L) = sin²(π i / L)` — on a unit-spacing 1D chain
+the integer bond index `i` coincides with the Cartesian midpoint. See
+the docstring on [`RadialEnvelope`](@ref) for the full discussion.
 """
 function ITensorModels.bond_weight(
     env::RadialEnvelope, lat::AbstractLattice, i::Int, j::Int
@@ -219,16 +220,25 @@ end
     _onsite_submodels_for_all(m::LatticeModel) -> Vector
 
 Resolve the on-site submodel for every site in a single pass over
-`bonds(m.lattice)`. Returns a vector indexed by site number. Raises if
-two bonds touching the same site resolve to different submodels
-(per-site overrides are not supported yet) or if any site is
-untouched by bonds. Replaces the previous `_onsite_submodel_for(m, k)`
-per-site helper, which was O(N_bonds) per call and therefore O(N_sites
-× N_bonds) when invoked from the `local_ham_terms` inner loop.
+`bonds(m.lattice)`. Returns a vector indexed by site number whose
+element type is the concrete value type of `m.bond_models` (so the
+downstream `onsite_term(subs[k], ...)` call dispatches statically on
+homogeneous lattices). Raises if two bonds touching the same site
+resolve to different submodels (per-site overrides are not supported
+yet) or if any site is untouched by bonds. Replaces the previous
+`_onsite_submodel_for(m, k)` per-site helper, which was worst-case
+O(N_bonds) per call and therefore worst-case O(N_sites × N_bonds) when
+invoked from the `local_ham_terms` inner loop.
 """
 function _onsite_submodels_for_all(m::LatticeModel)
     Nsite = num_sites(m.lattice)
-    subs = Vector{Any}(undef, Nsite)
+    # The element type is the concrete value type of bond_models. For a
+    # homogeneous `Dict(:nearest => sub)` this is `typeof(sub)`; for a
+    # heterogeneous dict it widens to the smallest type covering every
+    # value, which still avoids the `Vector{Any}` boxing that would
+    # force runtime dispatch on every onsite_term call.
+    T = valtype(m.bond_models)
+    subs = Vector{Union{Nothing,T}}(undef, Nsite)
     fill!(subs, nothing)
     for b in bonds(m.lattice)
         sub = _lookup_bond_model(m, b.type)
@@ -246,13 +256,16 @@ function _onsite_submodels_for_all(m::LatticeModel)
             end
         end
     end
+    out = Vector{T}(undef, Nsite)
     for k in 1:Nsite
-        subs[k] === nothing && error(
+        v = subs[k]
+        v === nothing && error(
             "ModulatedLatticeModel: no bond touches site $k; cannot resolve " *
             "onsite_term submodel.",
         )
+        out[k] = v
     end
-    return subs
+    return out
 end
 
 """
