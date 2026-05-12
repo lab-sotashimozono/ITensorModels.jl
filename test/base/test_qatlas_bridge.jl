@@ -139,3 +139,49 @@ end
     @test real(inner(ψ_s_up', H_s, ψ_s_up)) ≈ expected rtol = 1e-12
     @test real(inner(ψ_q_up', H_q, ψ_q_up)) ≈ expected rtol = 1e-12
 end
+
+
+@testset "S1Heisenberg1D bridge: to_qatlas + round-trip" begin
+    m = S1Heisenberg1D(; J=1.3)
+    qm = to_qatlas(m)
+    @test qm isa QAtlas.S1Heisenberg1D
+    @test qm.J ≈ 1.3
+    back = from_qatlas(qm)
+    @test back isa S1Heisenberg1D
+    @test back.J ≈ 1.3
+end
+
+@testset "S1Heisenberg1D: forwarder routes Energy fetch through QAtlas" begin
+    # Compare the forwarded fetch on the ITensorModels struct against a
+    # direct fetch on a hand-built QAtlas struct -- they must agree
+    # bitwise modulo float rounding.
+    m = S1Heisenberg1D(; J=1.0)
+    qm_direct = QAtlas.S1Heisenberg1D(; J=1.0)
+    N = 6
+    @test QAtlas.fetch(m, Energy(), OBC(N); beta=10.0) ≈
+        QAtlas.fetch(qm_direct, Energy(), OBC(N); beta=10.0) rtol = 1e-12
+end
+
+@testset "S1Heisenberg1D: DMRG GS energy matches QAtlas dense ED (low-T limit)" begin
+    # High-beta thermal energy from QAtlas dense ED is the ground-state
+    # energy. Compare against DMRG on the same OBC chain.
+    using ITensorMPS
+    using Random
+    using ITensors: MPO, siteinds
+    using ITensorMPS: random_mps, dmrg, Sweeps, maxdim!, cutoff!
+
+    N = 6
+    J = 1.0
+    m = S1Heisenberg1D(; J=J)
+    E_qatlas = QAtlas.fetch(m, Energy(), OBC(N); beta=50.0)
+
+    sites = siteinds("S=1", N)
+    H = MPO(ITensorModels.build_opsum(m, sites; phys_sites=1:N, boundary=:full), sites)
+    psi0 = random_mps(MersenneTwister(0x51), sites; linkdims=8)
+    sweeps = Sweeps(20)
+    maxdim!(sweeps, 10, 20, 40, 60, 80, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100)
+    cutoff!(sweeps, 1e-12)
+    E_dmrg, _ = dmrg(H, psi0, sweeps; outputlevel=0)
+
+    @test E_dmrg ≈ E_qatlas rtol = 1e-5
+end
