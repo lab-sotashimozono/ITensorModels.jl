@@ -24,6 +24,7 @@ export S1AnisotropicD1D
 export PXP1D
 export SSH1D
 export S1XXZ1D
+export SpinHalfXYZ1D
 export Cluster1D
 export TFIM, TFIML, XXZ1D, Heisenberg1D, S1Heisenberg1D, KitaevBond, LatticeModel
 export TFIM, TFIML, XXZ1D, Heisenberg1D, KitaevBond, TightBinding1D, LatticeModel
@@ -96,6 +97,7 @@ include("models/s1_anisotropic_d.jl")
 include("models/pxp_1d.jl")
 include("models/ssh_1d.jl")
 include("models/s1_xxz_1d.jl")
+include("models/spin_half_xyz_1d.jl")
 include("models/cluster_1d.jl")
 include("models/kitaev_bond.jl")
 include("models/xy_h_1d.jl")
