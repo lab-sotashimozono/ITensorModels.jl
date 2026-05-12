@@ -23,6 +23,7 @@ export LongRangeXY1D
 export S1AnisotropicD1D
 export PXP1D
 export SSH1D
+export S32Heisenberg1D
 export Cluster1D
 export TFIM, TFIML, XXZ1D, Heisenberg1D, S1Heisenberg1D, KitaevBond, LatticeModel
 export TFIM, TFIML, XXZ1D, Heisenberg1D, KitaevBond, TightBinding1D, LatticeModel
@@ -94,6 +95,7 @@ include("models/long_range_xy_1d.jl")
 include("models/s1_anisotropic_d.jl")
 include("models/pxp_1d.jl")
 include("models/ssh_1d.jl")
+include("models/s32_heisenberg_1d.jl")
 include("models/cluster_1d.jl")
 include("models/kitaev_bond.jl")
 include("models/xy_h_1d.jl")
