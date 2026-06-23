@@ -34,7 +34,7 @@ Resolve the lattice-site → MPS-position map. An empty `m.ordering`
 selects the natural order `1:num_sites(m.lattice)`.
 """
 function _ordering(m::LatticeModel)
-    isempty(m.ordering) ? collect(1:num_sites(m.lattice)) : m.ordering
+    return isempty(m.ordering) ? collect(1:num_sites(m.lattice)) : m.ordering
 end
 
 """

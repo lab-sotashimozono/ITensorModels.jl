@@ -56,7 +56,7 @@ function env_sphere_inscribed(x, y)
     cy = center(Ly)
     d = sqrt((x - cx)^2 + (y - cy)^2)
     R = min(Lx, Ly) / 2
-    profile_sin_square(d, R)
+    return profile_sin_square(d, R)
 end
 
 # (4) Spherical SSD with the circumscribed circle R = √((Lx/2)² + (Ly/2)²):
@@ -67,7 +67,7 @@ function env_sphere_circumscribed(x, y)
     cy = center(Ly)
     d = sqrt((x - cx)^2 + (y - cy)^2)
     R = sqrt((Lx / 2)^2 + (Ly / 2)^2)
-    profile_sin_square(d, R)
+    return profile_sin_square(d, R)
 end
 
 # (5) Spherical SinPower{4}: sharper roll-off at the boundary, broader
@@ -77,7 +77,7 @@ function env_sphere_sinpow4(x, y)
     cy = center(Ly)
     d = sqrt((x - cx)^2 + (y - cy)^2)
     R = min(Lx, Ly) / 2
-    profile_sin_power(d, R, 4)
+    return profile_sin_power(d, R, 4)
 end
 
 # (6) Spherical SmoothBoundary: flat-1 plateau in the bulk + half-cosine
@@ -87,7 +87,7 @@ function env_sphere_smooth(x, y)
     cy = center(Ly)
     d = sqrt((x - cx)^2 + (y - cy)^2)
     R = min(Lx, Ly) / 2
-    profile_smooth(d, R, 8)
+    return profile_smooth(d, R, 8)
 end
 
 # ---- Build heatmaps -------------------------------------------------

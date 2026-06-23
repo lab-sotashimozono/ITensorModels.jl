@@ -48,7 +48,7 @@ Convenience constructor. Defaults to [`SSD()`](@ref) — the most common
 modulation in the literature.
 """
 function modulated(base::AbstractLatticeModel; L::Int, modulation::AbstractModulation=SSD())
-    ModulatedModel(base, L, modulation)
+    return ModulatedModel(base, L, modulation)
 end
 
 site_type(m::ModulatedModel) = site_type(m.base)

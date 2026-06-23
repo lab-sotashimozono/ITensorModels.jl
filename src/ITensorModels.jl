@@ -14,6 +14,7 @@ export LongRangeIsing1D
 export ExtendedHubbard1D
 export Compass1D
 export Hubbard1D
+export AndersonImpurity1D, semielliptic_anderson, star_to_chain
 export AKLT1D
 export TightBindingV1D
 export J1J2Heisenberg1D
@@ -87,6 +88,7 @@ include("models/xxz.jl")
 include("models/heisenberg.jl")
 include("models/heisenberg_s1.jl")
 include("models/hubbard_1d.jl")
+include("models/anderson_impurity_1d.jl")
 include("models/aklt_1d.jl")
 include("models/tightbinding_v_1d.jl")
 include("models/j1j2_heisenberg_1d.jl")

@@ -47,7 +47,7 @@ function onsite_observable_op(m::TFIM, name::Symbol)
     if name === :sy
         return _tfim_y_op(s)
     end
-    error("TFIM: unsupported onsite observable $name on site $s")
+    return error("TFIM: unsupported onsite observable $name on site $s")
 end
 
 _tfim_y_op(::SiteType"S=1/2") = "Sy"

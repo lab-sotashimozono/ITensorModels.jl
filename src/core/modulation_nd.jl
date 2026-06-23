@@ -348,7 +348,7 @@ function profile_value(p::SinPowerProfile{N}, ds::Tuple{Vararg{Real}}) where {N}
 end
 
 function profile_value(::CosineRampProfile, ::Tuple{Vararg{Real}})
-    error(
+    return error(
         "CosineRampProfile combined with AxisProductDistance is not " *
         "supported yet. Use SinSquareProfile or SinPowerProfile for " *
         "axis-product envelopes, or pick a scalar distance metric " *

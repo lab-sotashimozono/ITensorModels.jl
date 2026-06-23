@@ -42,7 +42,7 @@ struct LatticeModel{L,D} <: AbstractLatticeModel
 end
 
 function LatticeModel(; lattice, bond_models, ordering::Vector{Int}=Int[])
-    LatticeModel(lattice, bond_models; ordering)
+    return LatticeModel(lattice, bond_models; ordering)
 end
 
 function site_type(m::LatticeModel)

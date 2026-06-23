@@ -15,7 +15,7 @@ combination. The generic method throws so that unsupported requests
 fail loud rather than silently returning a bogus operator name.
 """
 function onsite_observable_op(m::AbstractLatticeModel, name::Symbol)
-    error(
+    return error(
         "onsite_observable_op: model $(typeof(m)) has no observable `$name` on site $(site_type(m))",
     )
 end
@@ -31,7 +31,7 @@ gives the unnormalised total (`Σᵢ op_i`).
 
 For the per-site mean pass `weights = fill(1 / length(phys_sites), …)`;
 for bulk-only measurements on aux-sandwiched layouts
-(e.g. [`ThermalMPS.AuxChain`](@ref)) pass the bulk `phys_sites`
+(e.g. `ThermalMPS.AuxChain`) pass the bulk `phys_sites`
 directly.
 """
 function build_onsite_observable_opsum(

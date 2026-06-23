@@ -59,7 +59,7 @@ end
     N = 4
     t = 1.0
     U = 4.0
-    m = Hubbard1D(; t=t, U=U, μ=-U / 2)
+    m = Hubbard1D(; t=t, U=U, μ=(-U / 2))
     sites = siteinds("Electron", N)
     H = MPO(build_opsum(m, sites; phys_sites=1:N, boundary=:full), sites)
     psi0 = random_mps(MersenneTwister(0x1c), sites; linkdims=16)

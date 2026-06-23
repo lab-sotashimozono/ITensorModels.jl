@@ -30,4 +30,8 @@ makedocs(;
     pages=["Home" => "index.md"],
 )
 
-deploydocs(; repo="github.com/sotashimozono/ITensorModels.jl.git", devbranch="main")
+deploydocs(;
+    repo="github.com/sotashimozono/ITensorModels.jl.git",
+    devbranch="main",
+    push_preview=true,
+)

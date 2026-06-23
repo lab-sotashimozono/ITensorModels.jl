@@ -1,12 +1,13 @@
 name = "ITensorModels"
 uuid = "ef2189cb-6e0f-43f0-8f34-d6f851ec88d5"
-version = "0.7.17"
+version = "0.7.19"
 authors = ["sota shimozono <shimozono-sota631@g.ecc.u-tokyo.ac.jp>"]
 
 [deps]
 ITensorMPS = "0d1a4710-d33b-49a5-8f18-73bdf49b47e2"
 ITensorSiteKit = "ffe6b83a-dc94-4fa6-83e9-b4b377faf66b"
 ITensors = "9136182c-28ba-11e9-034c-db9fb085ebd5"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [weakdeps]
 LatticeCore = "84b1cbd8-bc58-4618-bc4f-b46a399f49f1"

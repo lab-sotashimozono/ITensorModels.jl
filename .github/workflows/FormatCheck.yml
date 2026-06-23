@@ -1,0 +1,28 @@
+name: Format Check
+# Runs on every PR (no path filter): format-check is a *required* status check,
+# so it must always report — a path-filtered required check never reports on
+# PRs that don't touch the filtered paths and blocks the merge forever.
+on:
+  pull_request:
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+      - name: Install JuliaFormatter
+        run: julia -e 'using Pkg; Pkg.add(name="JuliaFormatter", version="2"); using JuliaFormatter; @info "JuliaFormatter $(pkgversion(JuliaFormatter))"'
+      - name: Check formatting
+        run: |
+          julia -e '
+            using JuliaFormatter
+            ok = format(".", verbose=true, overwrite=false)
+            if !ok
+              println(stderr, "❌ Formatting issues found. Run JuliaFormatter locally: julia -e \"using JuliaFormatter; format(\\\".\\\")\"")
+              exit(1)
+            end
+            println("✅ All files are properly formatted.")
+          '

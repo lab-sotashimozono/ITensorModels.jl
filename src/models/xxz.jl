@@ -45,7 +45,7 @@ function onsite_observable_op(m::XXZ1D, name::Symbol)
     name === :sx && return xop
     name === :sy && return yop
     name === :sz && return zop
-    error("XXZ1D: unsupported onsite observable $name on site $(site_type(m))")
+    return error("XXZ1D: unsupported onsite observable $name on site $(site_type(m))")
 end
 
 # ---------------------------------------------------------------------
