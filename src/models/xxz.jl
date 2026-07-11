@@ -27,6 +27,10 @@ site_type(m::XXZ1D) = m.site
 _xxz_ops(::SiteType"S=1/2") = ("Sx", "Sy", "Sz", 1.0)
 _xxz_ops(::SiteType"Qubit") = ("X", "Y", "Z", 0.25)
 _xxz_ops(::SiteType"S=1") = ("Sx", "Sy", "Sz", 1.0)
+# High-spin sites (registered in ITensorSiteKit ≥ v0.2.0): same S operators,
+# unit scale — the spin-S Sx/Sy/Sz carry the standard operator norm.
+_xxz_ops(::SiteType"S=3/2") = ("Sx", "Sy", "Sz", 1.0)
+_xxz_ops(::SiteType"S=2") = ("Sx", "Sy", "Sz", 1.0)
 
 function bond_term(m::XXZ1D, i::Int, j::Int)
     xop, yop, zop, scale = _xxz_ops(m.site)

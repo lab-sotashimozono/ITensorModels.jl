@@ -14,7 +14,7 @@ LatticeCore = "84b1cbd8-bc58-4618-bc4f-b46a399f49f1"
 QAtlas = "2bd488d2-d3e6-46ee-afb3-5515643db0c7"
 
 [sources.ITensorSiteKit]
-rev = "v0.1.0"
+rev = "v0.2.0"
 url = "https://github.com/sotashimozono/ITensorSiteKit.jl"
 
 [extensions]
@@ -23,7 +23,7 @@ QAtlasExt = "QAtlas"
 
 [compat]
 ITensorMPS = "0.3, 0.4"
-ITensorSiteKit = "0.1"
+ITensorSiteKit = "0.2"
 ITensors = "0.9"
 LatticeCore = "0.8, 0.10"
 QAtlas = "0.13, 0.14, 0.15, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24, 0.25"
