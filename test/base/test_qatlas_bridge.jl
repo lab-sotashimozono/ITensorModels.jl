@@ -1,7 +1,7 @@
-using ITensorModels: TFIM, XXZ1D, Heisenberg1D, site_type, to_qatlas, from_qatlas
+using ITensorModels: TFIM, TFIML, XXZ1D, Heisenberg1D, site_type, to_qatlas, from_qatlas
 using ITensors: SiteType, OpSum
 using QAtlas: QAtlas
-using QAtlas: Energy, MassGap, Infinite, OBC
+using QAtlas: Energy, MassGap, Infinite, OBC, E8, E8Spectrum
 
 # These tests are deliberately non-tautological: they validate the
 # QAtlas bridge against (a) analytic TFIM results and (b) agreement
@@ -205,4 +205,33 @@ end
     E_dmrg, _ = dmrg(H, psi0, sweeps; outputlevel=0)
 
     @test E_dmrg ≈ E_qatlas rtol = 1e-5
+end
+
+@testset "TFIML → E8 spectrum (golden ratio)" begin
+    φ = 2 * cos(π / 5)   # golden ratio, the E8 hallmark m₂/m₁
+
+    # Qubit (Pauli): critical at h_x = J
+    m = TFIML(; J=1.0, h_x=1.0, h_z=0.05, site=SiteType("Qubit"))
+    @test to_qatlas(m) isa E8
+    ratios = QAtlas.fetch(m, E8Spectrum(), Infinite())
+    @test length(ratios) == 8
+    @test ratios[1] ≈ 1.0
+    @test ratios[2] ≈ φ rtol = 1e-10                 # golden ratio
+
+    # S=1/2 (Sᶻ,Sˣ = σ/2): critical at h_x = J/2 — same physics, different units
+    m_s = TFIML(; J=1.0, h_x=0.5, h_z=0.05)          # S=1/2 default site
+    @test to_qatlas(m_s) isa E8
+    @test QAtlas.fetch(m_s, E8Spectrum(), Infinite())[2] ≈ φ rtol = 1e-10
+
+    # forwarder parity with a direct E8 fetch
+    @test QAtlas.fetch(m, E8Spectrum(), Infinite()) ==
+        QAtlas.fetch(E8(), E8Spectrum(), Infinite())
+
+    # inverse: canonical critical TFIML
+    back = from_qatlas(E8())
+    @test back isa TFIML && back.h_x ≈ back.J && back.site === SiteType("Qubit")
+
+    # off-critical h_x warns (E8 only at criticality) but still returns ratios
+    m_off = TFIML(; J=1.0, h_x=0.4, h_z=0.05, site=SiteType("Qubit"))
+    @test (@test_logs (:warn,) match_mode = :any to_qatlas(m_off)) isa E8
 end

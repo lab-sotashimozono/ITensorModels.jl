@@ -78,6 +78,53 @@ function ITensorModels.from_qatlas(qm::QAtlas.S1Heisenberg1D)
     return ITensorModels.S1Heisenberg1D(; J=qm.J)
 end
 
+# --- TFIML → E8 (critical Ising + longitudinal field) -------------------
+#
+# The transverse-field Ising model at its CRITICAL transverse field,
+# perturbed by a small longitudinal field `h_z`, flows to the Zamolodchikov
+# E8 integrable field theory: 8 particles with masses fixed by E8, with
+# `m₂/m₁ = 2 cos(π/5) = φ` (golden ratio; observed in CoNb₂O₆). `QAtlas.E8`
+# is parameter-free and exposes the universal mass-RATIO spectrum via
+# `fetch(E8(), E8Spectrum(), Infinite())`. Those ratios are the `h_z → 0`
+# universal limit; a finite-`h_z` lattice model only approaches them.
+
+ITensorModels.to_qatlas(m::ITensorModels.TFIML) = ITensorModels.to_qatlas(m, m.site)
+
+# Qubit (Pauli): H = -J Σσᶻσᶻ - h_x Σσˣ - h_z Σσᶻ; Ising-critical at h_x = J.
+function ITensorModels.to_qatlas(m::ITensorModels.TFIML, ::SiteType"Qubit")
+    _warn_if_not_e8(m.h_x, m.J, m.h_z)
+    return QAtlas.E8()
+end
+
+# S=1/2 (Sᶻ,Sˣ = σ/2): Pauli couplings J/4, h_x/2 ⇒ critical at h_x = J/2.
+function ITensorModels.to_qatlas(m::ITensorModels.TFIML, ::SiteType"S=1/2")
+    _warn_if_not_e8(m.h_x, m.J / 2, m.h_z)
+    return QAtlas.E8()
+end
+
+# E8 universality holds only at the critical transverse field, and the mass
+# ratios are the h_z → 0 limit. Warn (do not hard-fail) so a caller can still
+# fetch the reference ratios while being told when they are off-regime.
+function _warn_if_not_e8(h_x, h_x_crit, h_z)
+    isapprox(h_x, h_x_crit; rtol=0.02) || @warn(
+        "TFIML→E8: the E8 spectrum requires the critical transverse field " *
+            "(h_x ≈ $(h_x_crit) for this site); got h_x=$(h_x). Returned E8 ratios may not apply.",
+        maxlog = 1,
+    )
+    (0 < h_z ≤ 0.2) || @warn(
+        "TFIML→E8: the E8 mass ratios are the h_z→0 universal limit; got h_z=$(h_z). " *
+            "A finite/large h_z only approximates them.",
+        maxlog = 1,
+    )
+    return nothing
+end
+
+# Inverse: a canonical critical TFIML with a small longitudinal perturbation.
+function ITensorModels.from_qatlas(::QAtlas.E8; J=1.0, h_z=0.01, site=SiteType("Qubit"))
+    h_x = site === SiteType("S=1/2") ? J / 2 : J
+    return ITensorModels.TFIML(; J=J, h_x=h_x, h_z=h_z, site=site)
+end
+
 # --- fetch forwarder ----------------------------------------------------
 #
 # Route `QAtlas.fetch` calls that take an ITensorModels model through
