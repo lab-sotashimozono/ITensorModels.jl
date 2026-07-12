@@ -25,7 +25,7 @@ QAtlasExt = "QAtlas"
 ITensorMPS = "0.3, 0.4"
 ITensorSiteKit = "0.2, 0.3"
 ITensors = "0.9"
-LatticeCore = "0.8, 0.10"
+LatticeCore = "0.8, 0.10, 0.12"
 QAtlas = "0.13, 0.14, 0.15, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24, 0.25"
 julia = "1.10"
 
