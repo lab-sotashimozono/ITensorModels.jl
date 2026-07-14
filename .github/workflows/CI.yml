@@ -5,30 +5,215 @@ on:
       - main
     tags: '*'
   pull_request:
+  workflow_dispatch:        # manual re-trigger
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write           # record-timings force-pushes the `ci-timings` orphan branch
+
 jobs:
-  test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - '1'
-        os:
-          - ubuntu-latest
-        arch:
-          - x64
+  # ───────────────────────────────────────────────────────────────────────────
+  # Shard planner. WHAT to run = the canonical universe (test/ci/universe.jl,
+  # single source of truth + completeness guard). This job only decides HOW to
+  # split it: Longest-Processing-Time bin-packing against the `ci-timings` orphan
+  # branch when it exists, else deterministic round-robin.
+  #
+  # N lives HERE and nowhere else. N is a REQUEST: the planner emits
+  # min(N, #test-files) shards, so a small suite can never produce a shard that
+  # runs zero tests.
+  #
+  # ITensorModels is a PUBLIC repo, so every job runs on GitHub-hosted ubuntu-latest
+  # (free minutes). The rosina self-hosted pool is off-limits to public repos — a fork
+  # PR would otherwise execute arbitrary code on our box.
+  # ───────────────────────────────────────────────────────────────────────────
+  plan:
+    name: Plan shards
+    runs-on: ubuntu-latest
+    outputs:
+      plan: ${{ steps.gen.outputs.plan }}
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
-          version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
+          version: '1'
+          arch: x64
+      - name: Fetch timing history (best-effort)
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin ci-timings >/dev/null 2>&1; then
+            git fetch --depth=1 origin ci-timings
+            git show FETCH_HEAD:timings.tsv > timings.tsv 2>/dev/null \
+              && echo "Loaded $(wc -l < timings.tsv) timing rows" \
+              || { echo "ci-timings has no timings.tsv — round-robin"; : > timings.tsv; }
+          else
+            echo "no ci-timings branch yet — round-robin fallback"
+            : > timings.tsv
+          fi
+      - id: gen
+        run: |
+          set -euo pipefail
+          N=8
+          # The planner is PURE STDLIB (universe.jl never does `using ITensorModels`), so
+          # it must not touch the project env — no precompile of the ITensors stack.
+          plan=$(julia --startup-file=no test/ci/plan_shards.jl "$N" timings.tsv)
+          count=$(printf '%s' "$plan" | jq 'length')
+          if [ "$count" -lt 1 ]; then
+            echo "::error::plan_shards produced an empty plan (count=$count)"
+            exit 1
+          fi
+          echo "plan=$plan" >> "$GITHUB_OUTPUT"
+          echo "Planned $count shards."
+
+  test:
+    name: shard ${{ matrix.sid }}
+    runs-on: ubuntu-latest
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.plan) }}
+    env:
+      ITENSORMODELS_TEST_FILES: ${{ matrix.files }}
+      ITENSORMODELS_SHARD_ID: ${{ matrix.sid }}
+      # Only a push to main persists timings — a PR must not rewrite the very history it
+      # was planned against.
+      ITENSORMODELS_EMIT: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && '1' || '0' }}
+      # julia-runtest SANDBOXES Pkg.test into a temp copy, so @__DIR__ points somewhere
+      # upload-artifact will never look. Pin the emit dir into the workspace.
+      ITENSORMODELS_CIOUT_DIR: ${{ github.workspace }}/test/.ci-out
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+          arch: x64
+      # A hosted runner has NO persistent depot: without a cache every shard would
+      # recompile the entire ITensors stack from scratch.
       - uses: julia-actions/cache@v3
+        with:
+          cache-name: shard-${{ matrix.sid }}
+          # The default include-matrix:true serializes the ENTIRE matrix context
+          # (including the multi-KB `files` list) into the cache key, blowing the
+          # 512-char key limit — every restore AND save then fails with
+          # "Key Validation Error" and each shard recompiles all deps on every run.
+          # matrix.sid is already in cache-name.
+          include-matrix: 'false'
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-${{ matrix.sid }}
+          path: lcov.info
+          retention-days: 1
+          if-no-files-found: error
+          overwrite: true
+      - name: Upload shard timing (push:main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: timing-${{ matrix.sid }}
+          path: test/.ci-out/timings-*.tsv
+          retention-days: 1
+          if-no-files-found: warn
+          overwrite: true
+          include-hidden-files: true
+
+  record-timings:
+    name: Record timing history
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.test.result == 'success'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: timing-parts
+          pattern: timing-*
+      - name: Merge into the ci-timings orphan branch (latest value wins)
+        run: |
+          set -euo pipefail
+          mkdir -p merged
+          if git ls-remote --exit-code --heads origin ci-timings >/dev/null 2>&1; then
+            git fetch --depth=1 origin ci-timings
+            git show FETCH_HEAD:timings.tsv > merged/timings.tsv 2>/dev/null || : > merged/timings.tsv
+          else
+            : > merged/timings.tsv
+          fi
+          find timing-parts -name 'timings-*.tsv' -exec cat {} + >> merged/timings.tsv || true
+          awk -F'\t' 'NF==2{t[$1]=$2} END{for (k in t) print k"\t"t[k]}' \
+            merged/timings.tsv | sort > merged/final.tsv
+          rows=$(wc -l < merged/final.tsv)
+          if [ "$rows" -lt 1 ]; then
+            echo "::error::push:main produced 0 timing rows — the emit path is broken (sandbox / ITENSORMODELS_CIOUT_DIR). Failing loudly instead of degrading to round-robin forever, silently."
+            exit 1
+          fi
+          echo "Merged timing rows: $rows"
+          tmp=$(mktemp -d)
+          cp merged/final.tsv "$tmp/timings.tsv"
+          cd "$tmp"
+          git init -q
+          git config user.email "ci@itensormodels"
+          git config user.name "itensormodels-ci"
+          git checkout -q -b ci-timings
+          git add timings.tsv
+          git commit -q -m "ci: refresh test timings ($rows rows) [skip ci]"
+          git push -q --force \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-timings
+
+  coverage:
+    name: Coverage (aggregated)
+    runs-on: ubuntu-latest
+    needs: test
+    if: always() && needs.test.result != 'cancelled'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: coverage-parts
+          pattern: coverage-*
+      - name: Merge the per-shard lcov reports
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find coverage-parts -name 'lcov.info' | sort)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No coverage artifacts found"
+            exit 1
+          fi
+          echo "Merging ${#files[@]} lcov reports"
+          if command -v lcov >/dev/null 2>&1; then
+            args=(); for f in "${files[@]}"; do args+=(-a "$f"); done
+            lcov "${args[@]}" -o lcov.info
+          else
+            # A concatenation is still a valid lcov report — codecov merges duplicate
+            # records itself.
+            cat "${files[@]}" > lcov.info
+          fi
       - uses: codecov/codecov-action@v7
         with:
           file: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  all-tests:
+    name: All tests passed
+    runs-on: ubuntu-latest
+    needs: [plan, test]
+    if: always()
+    steps:
+      - name: Check the plan and every shard passed
+        run: |
+          if [ "${{ needs.plan.result }}" != "success" ]; then
+            echo "Shard planning failed: ${{ needs.plan.result }}"; exit 1
+          fi
+          plan='${{ needs.plan.outputs.plan }}'
+          if [ -z "$plan" ] || [ "$plan" = "[]" ]; then
+            echo "Plan produced no shards — the test matrix would be empty"; exit 1
+          fi
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "One or more test shards failed: ${{ needs.test.result }}"; exit 1
+          fi
+          echo "All shards green."
