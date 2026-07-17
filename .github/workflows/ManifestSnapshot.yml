@@ -1,0 +1,11 @@
+name: Manifest snapshot
+on:
+  push:
+    branches: [main]
+    paths: [Project.toml]
+  workflow_dispatch:
+jobs:
+  snapshot:
+    permissions:
+      contents: write
+    uses: lab-sotashimozono/.github/.github/workflows/manifest-snapshot.yml@main
