@@ -1,7 +1,12 @@
-# Thin caller. The implementation lives ONCE, in QAtlasHub/.github (public, callable from any
-# owner), so the next breakage is one commit there instead of one PR per repo — this file used
-# to be a hand-rolled `gh pr edit` script, which GitHub's Projects-classic sunset broke in
-# every repo at once on 2026-07-28.
+# Thin caller. The implementation lives ONCE, in THIS org's `.github` — alongside
+# format-check, compathelper, autoregister, tagbot, release-drafter and guard-main, which lab
+# repos already call from there. This file used to be a hand-rolled `gh pr edit` script, which
+# GitHub's Projects-classic sunset broke in every repo at once on 2026-07-28.
+#
+# Not QAtlasHub's copy: that is a different OWNER, and Actions access, org secrets, runner
+# groups and release cadence do not cross the QAtlasHub / lab-sotashimozono / sotashimozono
+# boundaries. The workflow body is owner-agnostic, so hosting it here costs a file and removes
+# the coupling. Migrating also drops the `@v1` pin: reusables track `@main`, never a tag.
 name: PR Labeler
 on:
   pull_request:
@@ -12,4 +17,4 @@ permissions:
   issues: write            # addLabels / createLabel are issue-scoped, even on a PR
 jobs:
   label:
-    uses: QAtlasHub/.github/.github/workflows/labeler.yml@v1
+    uses: lab-sotashimozono/.github/.github/workflows/labeler.yml@main
