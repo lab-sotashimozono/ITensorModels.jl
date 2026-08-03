@@ -1,7 +1,7 @@
 using ITensorModels: XXZ1D, Heisenberg1D, build_opsum
 using ITensors, ITensorMPS
 using QAtlas: QAtlas
-using QAtlas: Energy, GroundStateEnergyDensity, Infinite, OBC
+using QAtlas: Energy, Infinite, OBC
 using Random
 
 # XXZ ground-state validation: compare ITensorMPS DMRG on the OpSum
@@ -46,11 +46,13 @@ end
     cutoff!(sweeps, 1e-12)
     E_dmrg, _ = dmrg(H, ψ0, sweeps; outputlevel=0)
 
-    # Heisenberg1D exposes GroundStateEnergyDensity (no bc arg in QAtlas);
-    # our forwarder adds the BC arg but QAtlas dispatches on that combo
-    # only via ExactSpectrum. Use the ITensorModels → QAtlas.Heisenberg1D
-    # translation and call the density directly.
-    ε_qatlas = QAtlas.fetch(QAtlas.Heisenberg1D(), GroundStateEnergyDensity(); J=m.J)
+    # QAtlas removed `GroundStateEnergyDensity`, folding it into `Energy{:per_site}`
+    # fetched without a `beta` — the alias name survives in its canonicaliser, so the
+    # import merely stopped binding and the failure was `UndefVarError ... in Main` at
+    # first USE rather than at the `using`. The replacement is the same call minus the
+    # BC argument that QAtlas still does not want here:
+    # `fetch(::Heisenberg1D, ::Energy{:per_site}; J) = J * (1//4 - log(2))`.
+    ε_qatlas = QAtlas.fetch(QAtlas.Heisenberg1D(), Energy{:per_site}(); J=m.J)
     @test E_dmrg / N ≈ ε_qatlas rtol = 0.05
     @test ε_qatlas ≈ 0.25 - log(2) rtol = 1e-12
 end
