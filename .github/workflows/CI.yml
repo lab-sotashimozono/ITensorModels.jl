@@ -22,22 +22,18 @@ jobs:
     with:
       shards: 8
     # The secret is passed to the call and there is deliberately NO caller-side upload job,
-    # because this repository is the missing control in an experiment that is currently
-    # unresolved — and that matters, because the answer decides how eleven more are configured.
+    # because this repository is PUBLIC and a public repository can. That is measured, and this
+    # repository is the measurement — three callers of the same reusable with the same named
+    # `secrets:` block, one variable at a time:
     #
-    # What is measured so far:
+    #   QAtlasHub/DataVault.jl              same org,  PUBLIC     token ARRIVES
+    #   lab-sotashimozono/ITensorModels.jl  other org, PUBLIC     token ARRIVES   <- this repo
+    #   lab-sotashimozono/ITensorAD.jl      other org, PRIVATE    token EMPTY
     #
-    #   QAtlasHub/DataVault.jl          PUBLIC,  same org as the reusable   token ARRIVES
-    #   lab-sotashimozono/ITensorAD.jl  PRIVATE, another org                token EMPTY
-    #
-    # Two variables differ at once, so neither "the organisation decides it" nor "private
-    # repositories decide it" is supported by that pair. This repository is PUBLIC, in ANOTHER
-    # organisation, and holds its own CODECOV_TOKEN — it varies only the organisation against
-    # DataVault, and only the visibility against ITensorAD.
-    #
-    # If `collect` uploads, visibility is what matters and the private repos need the
-    # caller-side `actions/upload-coverage` job. If it warns that no token arrived, the
-    # organisation is what matters and every lab-sotashimozono repo needs it, public or not.
-    # See QAtlasHub/TestShards.jl#48.
+    # The first two differ only in the organisation and agree, so it is not the organisation;
+    # the last two differ only in visibility and do not. A PRIVATE sibling of this repository
+    # needs `coverage-upload: false` plus a `coverage` job running
+    # QAtlasHub/TestShards.jl/actions/upload-coverage, which runs inside its own job and so has
+    # nothing to cross. See QAtlasHub/TestShards.jl#48.
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
