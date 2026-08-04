@@ -1,8 +1,25 @@
 name: AutoMerge
 
+# Merges a bot PR only after its CI is green.
+#
+# This was `pull_request` + `gh pr merge --auto`, which is NOT a CI gate here: native
+# auto-merge only waits for checks when the branch carries a protection rule with a REQUIRED
+# status check, and no repository in this fleet has one (Free-plan private repos cannot have
+# branch protection at all; the public ones do not configure it). `--auto` therefore merged
+# as soon as the PR was conflict-free, which on a repository with no required check is
+# immediately.
+#
+# It stayed dormant by accident, not by design: BOT_PAT authors these PRs as a real user, so
+# `github.actor == '...[bot]'` never matched and the job skipped every time. Had BOT_PAT
+# lapsed, CompatHelper would have fallen back to github.token, authored the PR as
+# `github-actions[bot]`, matched the condition — and a token expiry would have silently
+# become un-gated merging into main.
+#
+# `compathelper/*` belongs to AutoMergeCompatHelper.yml; this owns the rest.
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, labeled] # label反応も入れると便利
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
 
 permissions:
   contents: write
@@ -10,13 +27,13 @@ permissions:
 
 jobs:
   auto-merge:
-    runs-on: ubuntu-latest
     if: >
-      github.event.pull_request.user.type == 'Bot' ||
-      contains(github.event.pull_request.labels.*.name, 'automerge')
-    steps:
-      - name: Enable auto-merge
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge --auto --merge "$PR_URL"
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      startsWith(github.event.workflow_run.head_branch, 'dependabot/')
+    # The reusable's name is historical: it merges whatever green PR it is handed.
+    uses: lab-sotashimozono/.github/.github/workflows/automerge-compathelper.yml@main
+    with:
+      runner: '"ubuntu-latest"'
+      head_branch: ${{ github.event.workflow_run.head_branch }}
+    secrets: inherit

@@ -21,6 +21,11 @@ permissions:
 
 jobs:
   check-version:
+    # CompatHelper only edits [compat]; it cannot bump the version, so on its branches
+    # this gate can never pass. A check that is structurally red stops being read, and
+    # this one has been red on every CompatHelper PR since the bot was enabled. Those
+    # PRs are gated by AutoMergeCompatHelper.yml on CI instead.
+    if: ${{ !startsWith(github.head_ref, 'compathelper/') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
