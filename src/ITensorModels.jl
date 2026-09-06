@@ -9,6 +9,9 @@ export bond_term, boundary_patch, local_ham_terms, build_opsum
 export bond_coupling_term, onsite_term
 export onsite_observable_op, build_onsite_observable_opsum
 export TFIM, TFIML, XXZ1D, Heisenberg1D, KitaevBond, LatticeModel
+# Site-dependent (disordered) transverse-field Ising chain — a seed fixes the
+# couplings, so every representation downstream gets the SAME Hamiltonian.
+export RandomTFIM, random_tfim, rescale_disorder
 export XYh1D
 export LongRangeIsing1D
 export ExtendedHubbard1D
@@ -83,6 +86,7 @@ include("core/modulation_nd.jl")
 include("core/factories_nd.jl")
 
 include("models/tfim.jl")
+include("models/random_tfim.jl")
 include("models/tfiml.jl")
 include("models/xxz.jl")
 include("models/heisenberg.jl")
