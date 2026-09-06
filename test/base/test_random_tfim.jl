@@ -116,6 +116,18 @@ end
     @test random_tfim(; L=8, seed=5, Omega=3.0).J ≈ 3 .* b.J
 end
 
+@testset "RandomTFIM: the split protocol modulated consumes" begin
+    m = random_tfim(; L=5, seed=6)
+    sites = siteinds("Qubit", 5)
+    # A Uniform envelope must leave the chain alone, and it reaches the couplings
+    # only through bond_coupling_term/onsite_term.
+    wrapped = modulated(m; L=5, modulation=Uniform())
+    @test dense_mpo(wrapped, sites) ≈ dense_mpo(m, sites) atol = 1e-12
+    # And the pieces themselves carry the right coupling.
+    @test length(bond_coupling_term(m, 2, 3)) == 1
+    @test length(onsite_term(m, 4)) == 1
+end
+
 @testset "RandomTFIM: bonds are lattice bonds" begin
     m = random_tfim(; L=6, seed=4)
     @test_throws ErrorException bond_term(m, 1, 3)     # not nearest neighbour
