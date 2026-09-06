@@ -11,7 +11,7 @@ export onsite_observable_op, build_onsite_observable_opsum
 export TFIM, TFIML, XXZ1D, Heisenberg1D, KitaevBond, LatticeModel
 # Site-dependent (disordered) transverse-field Ising chain — a seed fixes the
 # couplings, so every representation downstream gets the SAME Hamiltonian.
-export RandomTFIM, nsites, rescale_disorder
+export RandomTFIM, random_tfim, rescale_disorder
 export XYh1D
 export LongRangeIsing1D
 export ExtendedHubbard1D
