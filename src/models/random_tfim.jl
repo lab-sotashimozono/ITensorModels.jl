@@ -43,7 +43,8 @@ Draw a [`RandomTFIM`](@ref) of `L` sites:
     J_i = Ω u_i^D,   h_i = Ω v_i^D,   u, v ~ U(0, 1),
 
 i.e. `P(J) = (D/Ω)(Ω/J)^{1-1/D}`, the disorder-strength parameterisation of
-[doi_10.1103_PhysRevB.98.195115](@cite). `D = 1` is the uniform ensemble.
+Xavier, Hoyos and Miranda, Phys. Rev. B 98, 195115 (2018). `D = 1` is the
+uniform ensemble.
 Because `J` and `h` share a distribution, `[ln J] = [ln h]` and the chain sits on
 the self-dual critical line for every `D`.
 
@@ -70,9 +71,9 @@ end
 
 `J_i^α`, `h_i^α` — the same realisation at disorder strength `αD`.
 
-The continuation step of adaptive DMRG
-([doi_10.1103_PhysRevB.98.195115](@cite)): the couplings keep their order and
-their draw, only the spread of their logarithms is scaled. `α = 0` is the clean
+The continuation step of adaptive DMRG (Xavier, Hoyos and Miranda,
+Phys. Rev. B 98, 195115 (2018)): the couplings keep their order and their draw,
+only the spread of their logarithms is scaled. `α = 0` is the clean
 chain `J = h = Ω`, `α = 1` is `m`, and criticality is preserved throughout
 because `[ln J]` and `[ln h]` scale together.
 """
