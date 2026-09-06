@@ -4,6 +4,7 @@ using ITensors: SiteType, array, prime
 using ITensorMPS
 using LinearAlgebra: I, kron
 using Random
+using Random: Xoshiro
 using Statistics: mean
 using Test
 
@@ -94,6 +95,25 @@ end
     m = RandomTFIM(; J=fill(J, L - 1), h=fill(h, L))
     @test dense_mpo(m, sites) ≈ dense_mpo(TFIM(; J=J, h=h, site=SiteType("Qubit")), sites) atol =
         1e-12
+end
+
+@testset "RandomTFIM: onsite observables" begin
+    m = random_tfim(; L=4, seed=1)
+    @test onsite_observable_op(m, :sx) == "X"
+    @test onsite_observable_op(m, :sz) == "Z"
+    @test onsite_observable_op(m, :sy) == "Y"
+    @test_throws ErrorException onsite_observable_op(m, :nonsense)
+    ms = random_tfim(; L=4, seed=1, site=SiteType("S=1/2"))
+    @test onsite_observable_op(ms, :sx) == "Sx"
+end
+
+@testset "random_tfim: rng, Omega" begin
+    # An AbstractRNG is accepted as well as an integer seed.
+    a = random_tfim(; L=8, seed=Xoshiro(5))
+    b = random_tfim(; L=8, seed=5)
+    @test a.J == b.J && a.h == b.h
+    # Omega is the energy scale.
+    @test random_tfim(; L=8, seed=5, Omega=3.0).J ≈ 3 .* b.J
 end
 
 @testset "RandomTFIM: bonds are lattice bonds" begin
