@@ -101,6 +101,47 @@ end
     end
 end
 
+@testset "RiceMeleHubbard1D: A = 0 leaves the model real" begin
+    # A phase of zero must not turn the coefficients complex: the field-free model is the
+    # one every other test and the DMRG cross-check build, and a complex MPO carrying zero
+    # phase would change their arithmetic for nothing.
+    m0 = RiceMeleHubbard1D(; v=0.7, w=1.3, Δ=0.5, U=3.0)
+    @test m0.A == 0.0
+    for t in ITensors.terms(bond_coupling_term(m0, 1, 2))
+        @test ITensors.coefficient(t) isa Real || imag(ITensors.coefficient(t)) == 0
+    end
+    sites = siteinds("Electron", 4)
+    H0 = MPO(build_opsum(m0, sites; phys_sites=1:4, boundary=:full), sites)
+    @test eltype(prod(H0)) <: Real
+end
+
+@testset "RiceMeleHubbard1D: the Peierls phase is conjugate across the bond" begin
+    # Hermiticity is what makes it a gauge rather than a gain/loss term, and it is the one
+    # thing a sign slip in `_hop_amplitudes` destroys.
+    A = 0.7
+    m = RiceMeleHubbard1D(; v=0.7, w=1.3, Δ=0.5, U=3.0, A=A)
+    fwd, bwd = ITensorModels._hop_amplitudes(m, 1)
+    @test bwd ≈ conj(fwd)
+    @test abs(fwd) ≈ 0.7
+    @test angle(-fwd) ≈ -A            # `c†_i c_{i+1}` carries e^{-iA}: this fixes H_k -> H_{k-A}
+    sites = siteinds("Electron", 4)
+    H = prod(MPO(build_opsum(m, sites; phys_sites=1:4, boundary=:full), sites))
+    @test norm(H - swapprime(dag(H), 0 => 1)) < 1.0e-12 * norm(H)
+    # …and it is not the zero phase in disguise.
+    H0 = prod(
+        MPO(
+            build_opsum(
+                RiceMeleHubbard1D(; v=0.7, w=1.3, Δ=0.5, U=3.0),
+                sites;
+                phys_sites=1:4,
+                boundary=:full,
+            ),
+            sites,
+        ),
+    )
+    @test norm(H - H0) > 0.1
+end
+
 @testset "RiceMeleHubbard1D: onsite_observable_op" begin
     m = RiceMeleHubbard1D()
     @test onsite_observable_op(m, :n) == "Ntot"

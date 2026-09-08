@@ -38,6 +38,28 @@ end
     end
 end
 
+@testset "on an open chain the Peierls phase is pure gauge" begin
+    # A uniform vector potential on an OPEN chain is removable by c_j -> e^{iφ_j} c_j, so it
+    # moves no energy — measured on the single-particle matrix at 1e-15 over
+    # A ∈ {0.3, 1.0, 2.5}. That makes the OBC energy STRUCTURALLY BLIND to the phase, so it
+    # cannot be used to check that the phase is present; it checks something else, and
+    # something a sign slip breaks: that the two directions are conjugate. Put e^{-iA} on
+    # both and the Hamiltonian stops being Hermitian and the energy moves.
+    v, w, Δ, N = 1.0, 0.4, 0.3, 3
+    ref = _qatlas_total(v, w, Δ, N)
+    for A in (0.0, 0.3, 1.0, 2.5)
+        m = RiceMeleHubbard1D(; v=v, w=w, Δ=Δ, U=0.0, A=A)
+        @test _dmrg_energy(m, 2N) ≈ ref rtol = 1.0e-9
+    end
+    # The interacting chain is gauge-invariant too, and there is no closed form to compare
+    # against — so it is compared against ITSELF at another phase, which a non-Hermitian
+    # bond would break.
+    withU(A) = _dmrg_energy(RiceMeleHubbard1D(; v=v, w=w, Δ=Δ, U=2.0, A=A), 2N)
+    e0 = withU(0.0)
+    @test withU(1.3) ≈ e0 rtol = 1.0e-9
+    @test e0 > ref                     # U ≠ 0 really did move it, so the above is not trivial
+end
+
 @testset "the agreement is a fact about the numbers, not the shape" begin
     # Swapping v and w keeps every dimension and every filling and changes the chain,
     # because OBC puts v on the first bond. MEASURED separation: 1.26 against 1e-13.
