@@ -104,6 +104,33 @@ end
     end
 end
 
+@testset "RiceMele1D: the split protocol adds back up" begin
+    # `bond_coupling_term` / `onsite_term` are the split the modulation wrapper consumes;
+    # `bond_term` / `boundary_patch` are the assembled form `build_opsum` walks. Nothing else
+    # in this file reaches `onsite_term`, so a wrong one would ship.
+    L = 2
+    sites = siteinds("Fermion", L)
+    mpo(H) = prod(MPO(H, sites))
+    for (v, w, Δ, V) in ((0.7, 1.3, 0.5, 0.9), (1.2, 0.2, -0.4, 0.0))
+        m = RiceMele1D(; v=v, w=w, Δ=Δ, V=V)
+        for k in 1:L
+            @test norm(2 * mpo(boundary_patch(m, k)) - mpo(onsite_term(m, k))) < 1.0e-12
+        end
+        assembled = mpo(bond_term(m, 1, 2))
+        split =
+            mpo(bond_coupling_term(m, 1, 2)) +
+            mpo(boundary_patch(m, 1)) +
+            mpo(boundary_patch(m, 2))
+        @test norm(assembled - split) < 1.0e-12
+        # Not vacuous: the two sites carry OPPOSITE staggered potentials, so giving both
+        # halves to the same end has to break it whenever Δ ≠ 0.
+        if !iszero(Δ)
+            crossed = mpo(bond_coupling_term(m, 1, 2)) + 2 * mpo(boundary_patch(m, 1))
+            @test norm(assembled - crossed) > 0.1 * abs(Δ)
+        end
+    end
+end
+
 @testset "RiceMele1D: an embedding that would flip the parities is refused" begin
     sites = siteinds("Fermion", 6)
     m = RiceMele1D(; v=1.0, w=0.2, Δ=0.5)
