@@ -71,6 +71,36 @@ end
     end
 end
 
+@testset "RiceMeleHubbard1D: the split protocol adds back up" begin
+    # `bond_coupling_term` / `onsite_term` are the split the modulation wrapper consumes, and
+    # `bond_term` / `boundary_patch` are the assembled form. The interface's contract is that
+    # the on-site weight is halved onto each endpoint, so the two have to reconcile exactly:
+    # a bond term is its coupling plus half the on-site weight at each end, and two boundary
+    # patches make one whole on-site term. Nothing else in the suite reaches `onsite_term`.
+    L = 2
+    sites = siteinds("Electron", L)
+    mpo(H) = prod(MPO(H, sites))
+    for (v, w, Δ, U) in ((0.7, 1.3, 0.5, 3.0), (1.2, 0.2, -0.4, 0.0), (1.0, 1.0, 0.0, 2.0))
+        m = RiceMeleHubbard1D(; v=v, w=w, Δ=Δ, U=U)
+        for k in 1:L
+            half = mpo(boundary_patch(m, k))
+            @test norm(2 * half - mpo(onsite_term(m, k))) < 1.0e-12
+        end
+        assembled = mpo(bond_term(m, 1, 2))
+        split =
+            mpo(bond_coupling_term(m, 1, 2)) +
+            mpo(boundary_patch(m, 1)) +
+            mpo(boundary_patch(m, 2))
+        @test norm(assembled - split) < 1.0e-12
+        # Not vacuous: the two sites carry OPPOSITE staggered potentials, so swapping which
+        # end gets which half has to break it whenever Δ ≠ 0.
+        if !iszero(Δ)
+            crossed = mpo(bond_coupling_term(m, 1, 2)) + 2 * mpo(boundary_patch(m, 1))
+            @test norm(assembled - crossed) > 0.1 * abs(Δ)
+        end
+    end
+end
+
 @testset "RiceMeleHubbard1D: onsite_observable_op" begin
     m = RiceMeleHubbard1D()
     @test onsite_observable_op(m, :n) == "Ntot"
