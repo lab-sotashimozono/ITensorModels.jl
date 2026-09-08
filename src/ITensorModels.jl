@@ -26,6 +26,7 @@ export DMIHeisenberg1D
 export LongRangeXY1D
 export S1AnisotropicD1D
 export PXP1D
+export RiceMele1D
 export RiceMeleHubbard1D
 export SSH1D
 export S1XXZ1D
@@ -102,6 +103,7 @@ include("models/dmi_heisenberg_1d.jl")
 include("models/long_range_xy_1d.jl")
 include("models/s1_anisotropic_d.jl")
 include("models/pxp_1d.jl")
+include("models/rice_mele_1d.jl")
 include("models/rice_mele_hubbard_1d.jl")
 include("models/ssh_1d.jl")
 include("models/s1_xxz_1d.jl")
