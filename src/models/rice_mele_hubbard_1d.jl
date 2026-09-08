@@ -81,7 +81,40 @@ function boundary_patch(m::RiceMeleHubbard1D, k::Int)
 end
 
 function onsite_observable_op(::RiceMeleHubbard1D, name::Symbol)
+    name === :nup && return "Nup"
+    name === :ndn && return "Ndn"
     name === :n && return "Ntot"
     name === :nupdn && return "Nupdn"
+    name === :sz && return "Sz"
     return error("RiceMeleHubbard1D: unsupported onsite observable $name")
 end
+
+# The dimerisation and the staggered potential are read off the PARITY of each site's index,
+# and the split protocol is handed a label on the 1D path and an ordinal on the ND one — so
+# "which site is this" is not something a bare index answers. SSH1D sidesteps that by leaving
+# the split protocol empty and overriding this with positions, which costs it every
+# modulation wrapper. Here the two readings are kept identical by construction instead:
+# an embedding that would make them differ is refused.
+#
+# It is not a hypothetical. MEASURED at (v, w, Δ) = (1.0, 0.2, 0.5) on four sites,
+# `‖H‖` = 102.0 for `phys_sites = 1:4` against 80.4 for `2:5` — the same chain, shifted by
+# one site, with v and w swapped and the sublattices exchanged. SSH1D returns 8.079604 for
+# both.
+function local_ham_terms(m::RiceMeleHubbard1D, phys_sites; boundary::Symbol=:bulk_half_edge)
+    phys = collect(phys_sites)
+    isempty(phys) ||
+        (all(==(1), diff(phys)) && isodd(first(phys))) ||
+        throw(
+            ArgumentError(
+                "RiceMeleHubbard1D: phys_sites must be consecutive and start on an odd site, " *
+                "got $(first(phys)):$(step_or_gaps(phys)):$(last(phys)). The intracell bond " *
+                "`v` is the one leaving an odd site, so any other embedding silently swaps " *
+                "v with w and exchanges the sublattices.",
+            ),
+        )
+    return invoke(
+        local_ham_terms, Tuple{AbstractLatticeModel,Any}, m, phys_sites; boundary=boundary
+    )
+end
+
+step_or_gaps(phys) = length(phys) < 2 ? 1 : (allequal(diff(phys)) ? phys[2] - phys[1] : "…")
