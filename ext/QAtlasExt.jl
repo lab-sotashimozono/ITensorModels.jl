@@ -125,6 +125,38 @@ function ITensorModels.from_qatlas(::QAtlas.E8; J=1.0, h_z=0.01, site=SiteType("
     return ITensorModels.TFIML(; J=J, h_x=h_x, h_z=h_z, site=site)
 end
 
+# --- RiceMeleHubbard1D: refused, with the reason ------------------------
+#
+# The forwarder below catches EVERY `AbstractLatticeModel`, so without a method here the
+# failure is a bare `MethodError: no method matching to_qatlas(::RiceMeleHubbard1D)`, which
+# says nothing about why. And the obvious mapping — `(v, w, Δ)` straight through — is wrong
+# in three separate ways, each silent:
+#
+#   * QAtlas's `RiceMele` is SPINLESS. MEASURED at (1.0, 0.4, 0.3), OBC(4):
+#     `Energy{:per_site}` is -0.53763615 there against -1.07527231 for this chain at U = 0.
+#     A factor of two, returned without a word.
+#   * `U` has nowhere to go, and at U ≠ 0 the two are not related by any factor.
+#   * `A` has nowhere to go. A static phase happens to leave every quantity QAtlas
+#     currently registers unchanged — the OBC spectrum is gauge, and `E(k)` integrated over
+#     the zone is shift-invariant — but `to_qatlas` is not told which quantity is being
+#     asked, so it cannot rely on that, and the first A-sensitive quantity (a current, a
+#     polarisation) would make it false.
+#
+# The comparison that IS correct lives in
+# `test/base/test_rice_mele_hubbard_1d_vs_qatlas.jl`, which carries the factor explicitly.
+function ITensorModels.to_qatlas(m::ITensorModels.RiceMeleHubbard1D)
+    return throw(
+        ArgumentError(
+            "to_qatlas: QAtlas's RiceMele is a SPINLESS, non-interacting chain, so it is " *
+            "not this model under another name. At U = A = 0 its energy is HALF this " *
+            "one's (measured: -0.53763615 against -1.07527231 per site at " *
+            "(v, w, Δ) = (1.0, 0.4, 0.3), OBC(4)); U and A have no image at all. " *
+            "Compare against `QAtlas.RiceMele` directly, carrying the factor of two — " *
+            "see test/base/test_rice_mele_hubbard_1d_vs_qatlas.jl.",
+        ),
+    )
+end
+
 # --- fetch forwarder ----------------------------------------------------
 #
 # Route `QAtlas.fetch` calls that take an ITensorModels model through
