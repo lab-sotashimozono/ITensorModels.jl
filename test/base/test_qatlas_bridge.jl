@@ -1,4 +1,5 @@
-using ITensorModels: TFIM, TFIML, XXZ1D, Heisenberg1D, site_type, to_qatlas, from_qatlas
+using ITensorModels:
+    TFIM, TFIML, XXZ1D, Heisenberg1D, RiceMeleHubbard1D, site_type, to_qatlas, from_qatlas
 using ITensors: SiteType, OpSum
 using QAtlas: QAtlas
 using QAtlas: Energy, MassGap, Infinite, OBC, E8, E8Spectrum
@@ -234,4 +235,32 @@ end
     # off-critical h_x warns (E8 only at criticality) but still returns ratios
     m_off = TFIML(; J=1.0, h_x=0.4, h_z=0.05, site=SiteType("Qubit"))
     @test (@test_logs (:warn,) match_mode = :any to_qatlas(m_off)) isa E8
+end
+
+@testset "RiceMeleHubbard1D is refused by the bridge, with the reason" begin
+    # The forwarder catches EVERY `AbstractLatticeModel`, so this model reaches it too — and
+    # QAtlas's `RiceMele` is spinless and non-interacting, i.e. a different Hamiltonian. The
+    # obvious mapping returns HALF the energy without a word: measured, -0.53763615 against
+    # -1.07527231 per site at (v, w, Δ) = (1.0, 0.4, 0.3), OBC(4).
+    m = RiceMeleHubbard1D(; v=1.0, w=0.4, Δ=0.3)
+    @test_throws ArgumentError to_qatlas(m)
+    @test_throws ArgumentError QAtlas.fetch(m, Energy{:per_site}(), OBC(4))
+    # Refused at U = A = 0 too, where the factor of two is the only difference — the point
+    # is that it is not this model under another name, not that U and A are unsupported.
+    @test_throws ArgumentError to_qatlas(
+        RiceMeleHubbard1D(; v=1.0, w=0.4, Δ=0.3, U=2.0, A=0.7)
+    )
+    # The message has to name the factor, or someone reads "unsupported" and adds the
+    # mapping that halves every energy.
+    msg = try
+        to_qatlas(m)
+        ""
+    catch e
+        sprint(showerror, e)
+    end
+    @test occursin("SPINLESS", msg)
+    @test occursin("HALF", msg)
+    # Positive control: the forwarder still works for a model that HAS a mapping, so the
+    # refusal above is about this model and not about the bridge being broken.
+    @test QAtlas.fetch(TFIM(; J=1.0, h=0.5), MassGap(), Infinite()) isa Real
 end
