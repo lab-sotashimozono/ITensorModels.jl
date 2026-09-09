@@ -36,7 +36,11 @@ _hop(m::RiceMele1D, i::Int) = isodd(i) ? m.v : m.w
 
 # Sites one unit apart, so `A` is per site spacing. The docstring says why that is a choice
 # and what a comparison against a source using another one has to convert.
-bond_displacement(::RiceMele1D) = 1.0
+# Long form on purpose: a one-line method with a constant body is folded away and never
+# registers a coverage hit, so the declaration would read as untested.
+function bond_displacement(::RiceMele1D)
+    return 1.0
+end
 
 # Forward and backward hopping amplitudes on the bond from `i` to `j`. Real when there is
 # no field, so the field-free model still builds a real MPO rather than a complex one
