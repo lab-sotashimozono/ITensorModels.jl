@@ -46,6 +46,7 @@ export AbstractProfile, SinSquareProfile, SinPowerProfile, CosineRampProfile
 export RadialEnvelope
 export distance_at_position, distance_at, center_position, profile_value, site_envelope
 export spherical_ssd, cylindrical_ssd, rectangular_ssd
+export bond_displacement
 export to_qatlas, from_qatlas
 
 """
@@ -64,6 +65,30 @@ abstract type AbstractLatticeModel end
 ITensors `SiteType` used when building physical indices for `model`.
 """
 function site_type end
+
+"""
+    bond_displacement(model, i, j) -> NTuple{N,Float64}
+
+How far site `j` sits from site `i`, in the length unit `model` measures its vector potential
+`A` in. This is the only thing a Peierls substitution needs from a model: the phase picked up
+by `c†_i c_j` is `exp(-i A ⋅ bond_displacement(model, i, j))`, which is
+`AbstractQAtlas.peierls_phase` contracted with this displacement.
+
+Defined for any pair, not only for pairs the model couples — it reports a geometric distance
+and makes no claim that a bond is there.
+
+Every chain here places its sites one unit apart, so a nearest-neighbour bond returns
+`(1.0,)`: `A` is measured **per site spacing**. That is a CHOICE, and the reason it is written
+down rather than left implicit is that nothing cheap can catch it being wrong. Rescaling the
+unit rescales `A`, so it cancels out of every static quantity, out of the linear response, and
+out of the second-order response. It first shows up at THIRD order in the drive.
+
+Sources differ, so a comparison has to convert. Ono, *Phys. Rev. Lett.* **135**, 026401 (2025)
+sets the nearest-neighbour distance to 1/2 — measuring `A` per UNIT CELL, and writing the bond
+phase as `e^{iA/2}`. Reproducing that paper with these models therefore means passing
+`A = A_paper / 2`.
+"""
+function bond_displacement end
 
 """
     to_qatlas(model)

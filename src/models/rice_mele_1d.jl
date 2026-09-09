@@ -34,15 +34,25 @@ site_type(m::RiceMele1D) = m.site
 
 _hop(m::RiceMele1D, i::Int) = isodd(i) ? m.v : m.w
 
-function _hop_amplitudes(m::RiceMele1D, i::Int)
+# Sites one unit apart: `A` is per site spacing. The docstring says why that is a choice.
+bond_displacement(::RiceMele1D, i::Int, j::Int) = (Float64(j - i),)
+
+# Forward and backward hopping amplitudes on the bond from `i` to `j`. Real when there is
+# no field, so the field-free model still builds a real MPO rather than a complex one
+# carrying zero phase.
+function _hop_amplitudes(m::RiceMele1D, i::Int, j::Int)
     t = _hop(m, i)
     iszero(m.A) && return (-t, -t)
-    return (-t * cis(-m.A), -t * cis(m.A))
+    # Peierls: `c†_i c_j` picks up `exp(-i A ⋅ (r_j - r_i))`. The displacement is the only
+    # part the model supplies; `AbstractQAtlas.peierls_phase` contracts it the same way,
+    # and `test/test_peierls_phase.jl` pins the two together so they cannot drift.
+    phase = m.A * only(bond_displacement(m, i, j))
+    return (-t * cis(-phase), -t * cis(phase))
 end
 _stagger(m::RiceMele1D, k::Int) = isodd(k) ? m.Δ : -m.Δ
 
 function bond_coupling_term(m::RiceMele1D, i::Int, j::Int)
-    fwd, bwd = _hop_amplitudes(m, i)
+    fwd, bwd = _hop_amplitudes(m, i, j)
     H = OpSum()
     H += fwd, "Cdag", i, "C", j
     H += bwd, "Cdag", j, "C", i

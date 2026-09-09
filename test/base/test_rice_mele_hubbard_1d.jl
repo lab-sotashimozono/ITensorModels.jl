@@ -120,7 +120,7 @@ end
     # thing a sign slip in `_hop_amplitudes` destroys.
     A = 0.7
     m = RiceMeleHubbard1D(; v=0.7, w=1.3, Δ=0.5, U=3.0, A=A)
-    fwd, bwd = ITensorModels._hop_amplitudes(m, 1)
+    fwd, bwd = ITensorModels._hop_amplitudes(m, 1, 2)
     @test bwd ≈ conj(fwd)
     @test abs(fwd) ≈ 0.7
     @test angle(-fwd) ≈ -A            # `c†_i c_{i+1}` carries e^{-iA}: this fixes H_k -> H_{k-A}
