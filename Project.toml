@@ -1,6 +1,6 @@
 name = "ITensorModels"
 uuid = "ef2189cb-6e0f-43f0-8f34-d6f851ec88d5"
-version = "0.7.30"
+version = "0.7.31"
 authors = ["sota shimozono <shimozono-sota631@g.ecc.u-tokyo.ac.jp>"]
 
 [deps]
@@ -23,6 +23,7 @@ LatticeCoreExt = "LatticeCore"
 QAtlasExt = "QAtlas"
 
 [compat]
+AbstractQAtlas = "0.6.8"
 ITensorMPS = "0.3, 0.4"
 ITensorSiteKit = "0.2, 0.3, 0.4"
 ITensors = "0.9"
@@ -33,6 +34,7 @@ TestShards = "0.3"
 julia = "1.10"
 
 [extras]
+AbstractQAtlas = "dcea2817-62f8-4a75-b498-1b50a9ed1e4d"
 Lattice2D = "e8031020-b7ff-4f1d-bee4-f79aea4cf140"
 LatticeCore = "84b1cbd8-bc58-4618-bc4f-b46a399f49f1"
 QAtlas = "2bd488d2-d3e6-46ee-afb3-5515643db0c7"
@@ -43,4 +45,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestShards = "acceef1d-f5e0-4fe4-a546-818dc56ce7b2"
 
 [targets]
-test = ["Lattice2D", "LatticeCore", "QAtlas", "QuasiCrystal", "Random", "Statistics", "Test", "TestShards"]
+test = ["AbstractQAtlas", "Lattice2D", "LatticeCore", "QAtlas", "QuasiCrystal", "Random", "Statistics", "Test", "TestShards"]

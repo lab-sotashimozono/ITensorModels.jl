@@ -46,6 +46,7 @@ export AbstractProfile, SinSquareProfile, SinPowerProfile, CosineRampProfile
 export RadialEnvelope
 export distance_at_position, distance_at, center_position, profile_value, site_envelope
 export spherical_ssd, cylindrical_ssd, rectangular_ssd
+export bond_displacement
 export to_qatlas, from_qatlas
 
 """
@@ -64,6 +65,23 @@ abstract type AbstractLatticeModel end
 ITensors `SiteType` used when building physical indices for `model`.
 """
 function site_type end
+
+"""
+    bond_displacement(model) -> Float64
+
+The distance between the sites a bond of `model` connects, in the length unit `model`
+measures its vector potential `A` in. The Peierls phase on a bond is
+`A * bond_displacement(model)` — `AbstractQAtlas.peierls_phase` contracted with it.
+
+Every chain here places its sites one unit apart, so this is `1.0`: `A` per SITE spacing.
+Stated rather than left implicit because nothing cheap catches a wrong choice — it cancels
+out of everything at `A = 0`, and a uniform `A` on an open chain is a pure gauge.
+
+Sources differ. Ono, *Phys. Rev. Lett.* **135**, 026401 (2025) puts the nearest-neighbour
+distance at 1/2 — `A` per unit cell, `e^{iA/2}` on a bond — so reproducing it here means
+passing `A = A_paper / 2`.
+"""
+function bond_displacement end
 
 """
     to_qatlas(model)

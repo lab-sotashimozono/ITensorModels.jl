@@ -34,10 +34,16 @@ site_type(m::RiceMele1D) = m.site
 
 _hop(m::RiceMele1D, i::Int) = isodd(i) ? m.v : m.w
 
+# Long form: a constant one-line body is folded away and records no coverage hit.
+function bond_displacement(::RiceMele1D)
+    return 1.0
+end
+
 function _hop_amplitudes(m::RiceMele1D, i::Int)
     t = _hop(m, i)
     iszero(m.A) && return (-t, -t)
-    return (-t * cis(-m.A), -t * cis(m.A))
+    phase = m.A * bond_displacement(m)
+    return (-t * cis(-phase), -t * cis(phase))
 end
 _stagger(m::RiceMele1D, k::Int) = isodd(k) ? m.Δ : -m.Δ
 
