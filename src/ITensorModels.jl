@@ -69,36 +69,17 @@ function site_type end
 """
     bond_displacement(model) -> Float64
 
-The distance between the two sites a bond of `model` connects, in the length unit `model`
-measures its vector potential `A` in. This is the whole of what a Peierls substitution needs
-from a model: the phase on a bond is `A * bond_displacement(model)`, which is
-`AbstractQAtlas.peierls_phase` contracted with that displacement.
+The distance between the sites a bond of `model` connects, in the length unit `model`
+measures its vector potential `A` in. The Peierls phase on a bond is
+`A * bond_displacement(model)` — `AbstractQAtlas.peierls_phase` contracted with it.
 
-It takes no site indices ON PURPOSE. A model here has one hop distance, and the obvious
-generalisation — `j - i` — would be wrong: on the `LatticeCore` path the indices are MPS
-POSITIONS produced by a user-supplied ordering, so their difference is not a displacement.
+Every chain here places its sites one unit apart, so this is `1.0`: `A` per SITE spacing.
+Stated rather than left implicit because nothing cheap catches a wrong choice — it cancels
+out of everything at `A = 0`, and a uniform `A` on an open chain is a pure gauge.
 
-Every chain here places its sites one unit apart, so this is `1.0`: `A` is measured per SITE
-spacing. That is a CHOICE, and it is written down because the checks that would normally
-catch a wrong one are structurally blind to it:
-
-| check | why it cannot see the unit |
-|:--|:--|
-| static / equilibrium, `A = 0` | `H` depends on `A` only through `A * d` |
-| anything on an OPEN chain | a uniform `A` is a pure gauge there |
-| a comparison against an oracle built the same way | it shares the convention |
-
-Measured on an 8-site Rice-Mele chain, `v, w, Δ = 0.7, 1.3, 0.4`: open, `E(A) - E(0)` stays
-under `1.1e-14` out to `A = 1`; closed into a ring, `d²E/dA²` at `A = 0` comes out in the
-ratio `3.999981` between `d = 1` and `d = 1/2`. So the unit is invisible until a fixture is
-periodic, and then an `n`-th order response carries a factor `dⁿ`.
-
-Sources differ, so a comparison has to convert. Ono, *Phys. Rev. Lett.* **135**, 026401
-(2025) sets the nearest-neighbour distance to 1/2 — `A` per UNIT CELL, `e^{iA/2}` on a bond —
-so reproducing it with these models means passing `A = A_paper / 2`.
-
-A current operator carries the same factor: `J = -∂H/∂A` brings down one power of the
-displacement, so it has to be built from this same number rather than a second guess at it.
+Sources differ. Ono, *Phys. Rev. Lett.* **135**, 026401 (2025) puts the nearest-neighbour
+distance at 1/2 — `A` per unit cell, `e^{iA/2}` on a bond — so reproducing it here means
+passing `A = A_paper / 2`.
 """
 function bond_displacement end
 

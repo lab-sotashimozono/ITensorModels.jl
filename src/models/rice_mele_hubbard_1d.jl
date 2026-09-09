@@ -38,23 +38,16 @@ site_type(m::RiceMeleHubbard1D) = m.site
 
 _hop(m::RiceMeleHubbard1D, i::Int) = isodd(i) ? m.v : m.w
 
-# Sites one unit apart, so `A` is per site spacing. The docstring says why that is a choice
-# and what a comparison against a source using another one has to convert.
-# Long form on purpose: a one-line method with a constant body is folded away and never
-# registers a coverage hit, so the declaration would read as untested.
+# Long form: a constant one-line body is folded away and records no coverage hit.
 function bond_displacement(::RiceMeleHubbard1D)
     return 1.0
 end
 
-# Forward and backward hopping amplitudes on the bond from `i` to `j`. Real when there is
-# no field, so the field-free model still builds a real MPO rather than a complex one
-# carrying zero phase.
+# Forward and backward hopping amplitudes on bond `i`. Real when there is no field, so the
+# field-free model still builds a real MPO rather than a complex one carrying zero phase.
 function _hop_amplitudes(m::RiceMeleHubbard1D, i::Int)
     t = _hop(m, i)
     iszero(m.A) && return (-t, -t)
-    # Peierls: `c†_i c_j` picks up `exp(-i A d)`. `test/base/test_peierls_phase.jl` pins
-    # this against `AbstractQAtlas.peierls_phase`, so the declaration and the operator
-    # cannot drift apart in either direction.
     phase = m.A * bond_displacement(m)
     return (-t * cis(-phase), -t * cis(phase))
 end
