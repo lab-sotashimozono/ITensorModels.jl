@@ -53,3 +53,24 @@ function build_onsite_observable_opsum(
     end
     return opsum
 end
+
+"""
+    bond_current_term(model, i, j) -> OpSum
+
+The electric current on bond `(i, j)`: `-∂H/∂A` restricted to that bond, unnormalised.
+
+`A` enters `H` only through the Peierls phase, so this is built from the two numbers the
+Hamiltonian already uses — [`bond_displacement`](@ref) and the model's own hopping
+amplitudes. A current written independently of `H` is free to disagree with it about the
+length unit, and nothing at `A = 0` would notice.
+
+The relation and its sign are `AbstractQAtlas`'s `ElectricCurrentResponse`; the operator is
+not, so it is written here and checked against that relation in the tests.
+
+Consumers normalise: Ono, *Phys. Rev. Lett.* **135**, 026401 (2025) reports
+`⟨J⟩ = -N⁻¹⟨∂H/∂A⟩`, and the `N⁻¹` is the caller's as for every other `*_term` here.
+
+Unlike [`onsite_observable_op`](@ref) this carries the Hamiltonian's couplings — being a
+derivative of the Hamiltonian is what it is.
+"""
+function bond_current_term end

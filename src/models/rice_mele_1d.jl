@@ -47,6 +47,16 @@ function _hop_amplitudes(m::RiceMele1D, i::Int)
 end
 _stagger(m::RiceMele1D, k::Int) = isodd(k) ? m.Δ : -m.Δ
 
+# ∂fwd/∂A = -i d fwd and ∂bwd/∂A = +i d bwd, so J = -∂H/∂A reuses the model's amplitudes.
+function bond_current_term(m::RiceMele1D, i::Int, j::Int)
+    d = bond_displacement(m)
+    fwd, bwd = _hop_amplitudes(m, i)
+    J = OpSum()
+    J += (im * d * fwd, "Cdag", i, "C", j)
+    J += (-im * d * bwd, "Cdag", j, "C", i)
+    return J
+end
+
 function bond_coupling_term(m::RiceMele1D, i::Int, j::Int)
     fwd, bwd = _hop_amplitudes(m, i)
     H = OpSum()
