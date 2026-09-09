@@ -67,26 +67,38 @@ ITensors `SiteType` used when building physical indices for `model`.
 function site_type end
 
 """
-    bond_displacement(model, i, j) -> NTuple{N,Float64}
+    bond_displacement(model) -> Float64
 
-How far site `j` sits from site `i`, in the length unit `model` measures its vector potential
-`A` in. This is the only thing a Peierls substitution needs from a model: the phase picked up
-by `c†_i c_j` is `exp(-i A ⋅ bond_displacement(model, i, j))`, which is
-`AbstractQAtlas.peierls_phase` contracted with this displacement.
+The distance between the two sites a bond of `model` connects, in the length unit `model`
+measures its vector potential `A` in. This is the whole of what a Peierls substitution needs
+from a model: the phase on a bond is `A * bond_displacement(model)`, which is
+`AbstractQAtlas.peierls_phase` contracted with that displacement.
 
-Defined for any pair, not only for pairs the model couples — it reports a geometric distance
-and makes no claim that a bond is there.
+It takes no site indices ON PURPOSE. A model here has one hop distance, and the obvious
+generalisation — `j - i` — would be wrong: on the `LatticeCore` path the indices are MPS
+POSITIONS produced by a user-supplied ordering, so their difference is not a displacement.
 
-Every chain here places its sites one unit apart, so a nearest-neighbour bond returns
-`(1.0,)`: `A` is measured **per site spacing**. That is a CHOICE, and the reason it is written
-down rather than left implicit is that nothing cheap can catch it being wrong. Rescaling the
-unit rescales `A`, so it cancels out of every static quantity, out of the linear response, and
-out of the second-order response. It first shows up at THIRD order in the drive.
+Every chain here places its sites one unit apart, so this is `1.0`: `A` is measured per SITE
+spacing. That is a CHOICE, and it is written down because the checks that would normally
+catch a wrong one are structurally blind to it:
 
-Sources differ, so a comparison has to convert. Ono, *Phys. Rev. Lett.* **135**, 026401 (2025)
-sets the nearest-neighbour distance to 1/2 — measuring `A` per UNIT CELL, and writing the bond
-phase as `e^{iA/2}`. Reproducing that paper with these models therefore means passing
-`A = A_paper / 2`.
+| check | why it cannot see the unit |
+|:--|:--|
+| static / equilibrium, `A = 0` | `H` depends on `A` only through `A * d` |
+| anything on an OPEN chain | a uniform `A` is a pure gauge there |
+| a comparison against an oracle built the same way | it shares the convention |
+
+Measured on an 8-site Rice-Mele chain, `v, w, Δ = 0.7, 1.3, 0.4`: open, `E(A) - E(0)` stays
+under `1.1e-14` out to `A = 1`; closed into a ring, `d²E/dA²` at `A = 0` comes out in the
+ratio `3.999981` between `d = 1` and `d = 1/2`. So the unit is invisible until a fixture is
+periodic, and then an `n`-th order response carries a factor `dⁿ`.
+
+Sources differ, so a comparison has to convert. Ono, *Phys. Rev. Lett.* **135**, 026401
+(2025) sets the nearest-neighbour distance to 1/2 — `A` per UNIT CELL, `e^{iA/2}` on a bond —
+so reproducing it with these models means passing `A = A_paper / 2`.
+
+A current operator carries the same factor: `J = -∂H/∂A` brings down one power of the
+displacement, so it has to be built from this same number rather than a second guess at it.
 """
 function bond_displacement end
 

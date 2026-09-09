@@ -38,25 +38,26 @@ site_type(m::RiceMeleHubbard1D) = m.site
 
 _hop(m::RiceMeleHubbard1D, i::Int) = isodd(i) ? m.v : m.w
 
-# Sites one unit apart: `A` is per site spacing. The docstring says why that is a choice.
-bond_displacement(::RiceMeleHubbard1D, i::Int, j::Int) = (Float64(j - i),)
+# Sites one unit apart, so `A` is per site spacing. The docstring says why that is a choice
+# and what a comparison against a source using another one has to convert.
+bond_displacement(::RiceMeleHubbard1D) = 1.0
 
 # Forward and backward hopping amplitudes on the bond from `i` to `j`. Real when there is
 # no field, so the field-free model still builds a real MPO rather than a complex one
 # carrying zero phase.
-function _hop_amplitudes(m::RiceMeleHubbard1D, i::Int, j::Int)
+function _hop_amplitudes(m::RiceMeleHubbard1D, i::Int)
     t = _hop(m, i)
     iszero(m.A) && return (-t, -t)
-    # Peierls: `c†_i c_j` picks up `exp(-i A ⋅ (r_j - r_i))`. The displacement is the only
-    # part the model supplies; `AbstractQAtlas.peierls_phase` contracts it the same way,
-    # and `test/test_peierls_phase.jl` pins the two together so they cannot drift.
-    phase = m.A * only(bond_displacement(m, i, j))
+    # Peierls: `c†_i c_j` picks up `exp(-i A d)`. `test/base/test_peierls_phase.jl` pins
+    # this against `AbstractQAtlas.peierls_phase`, so the declaration and the operator
+    # cannot drift apart in either direction.
+    phase = m.A * bond_displacement(m)
     return (-t * cis(-phase), -t * cis(phase))
 end
 _stagger(m::RiceMeleHubbard1D, k::Int) = isodd(k) ? m.Δ : -m.Δ
 
 function bond_coupling_term(m::RiceMeleHubbard1D, i::Int, j::Int)
-    fwd, bwd = _hop_amplitudes(m, i, j)
+    fwd, bwd = _hop_amplitudes(m, i)
     H = OpSum()
     H += fwd, "Cdagup", i, "Cup", j
     H += bwd, "Cdagup", j, "Cup", i
