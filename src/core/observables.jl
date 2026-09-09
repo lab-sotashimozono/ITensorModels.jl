@@ -59,23 +59,18 @@ end
 
 The electric current on bond `(i, j)`: `-∂H/∂A` restricted to that bond, unnormalised.
 
-The Peierls phase is the only place `A` enters, so the derivative acts on the hopping
-amplitudes alone and the result is built from exactly the two numbers the Hamiltonian
-already uses — [`bond_displacement`](@ref) and the model's own forward/backward amplitudes.
-There is no second copy of the phase and no second copy of the length unit, which is the
-point: a current written independently of `H` is free to disagree with it about `A`, and
-nothing at `A = 0` would notice.
+`A` enters `H` only through the Peierls phase, so this is built from the two numbers the
+Hamiltonian already uses — [`bond_displacement`](@ref) and the model's own hopping
+amplitudes. A current written independently of `H` is free to disagree with it about the
+length unit, and nothing at `A = 0` would notice.
 
-`AbstractQAtlas` owns the relation and its sign, as `ElectricCurrentResponse`
-(`j - (-dH_dA)`) hanging off `derivative_edge(ElectricCurrent)`. It cannot supply the
-operator — its `peierls_current` seam differentiates a scalar energy — so the operator is
-written here and `test/base/test_bond_current.jl` checks it against that relation, with
-`∂H/∂A` taken numerically from the model's own Hamiltonian.
+The relation and its sign are `AbstractQAtlas`'s `ElectricCurrentResponse`; the operator is
+not, so it is written here and checked against that relation in the tests.
 
-Consumers normalise. Ono, *Phys. Rev. Lett.* **135**, 026401 (2025) reports
-`⟨J⟩ = -N⁻¹⟨∂H/∂A⟩`; the `N⁻¹` is the caller's, as it is for every other `*_term` here.
+Consumers normalise: Ono, *Phys. Rev. Lett.* **135**, 026401 (2025) reports
+`⟨J⟩ = -N⁻¹⟨∂H/∂A⟩`, and the `N⁻¹` is the caller's as for every other `*_term` here.
 
-Unlike [`onsite_observable_op`](@ref) this DOES carry the Hamiltonian's couplings — being a
-derivative of the Hamiltonian is what it is, not an accident of how it is assembled.
+Unlike [`onsite_observable_op`](@ref) this carries the Hamiltonian's couplings — being a
+derivative of the Hamiltonian is what it is.
 """
 function bond_current_term end

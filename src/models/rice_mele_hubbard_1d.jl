@@ -53,9 +53,7 @@ function _hop_amplitudes(m::RiceMeleHubbard1D, i::Int)
 end
 _stagger(m::RiceMeleHubbard1D, k::Int) = isodd(k) ? m.Δ : -m.Δ
 
-# J = -∂H/∂A. `A` enters only through the Peierls phase, so with fwd = -t e^{-iAd} and
-# bwd = -t e^{+iAd} the derivative is ∂fwd/∂A = -i d fwd and ∂bwd/∂A = +i d bwd. Reusing the
-# model's own amplitudes keeps the phase and the length unit single-sourced.
+# ∂fwd/∂A = -i d fwd and ∂bwd/∂A = +i d bwd, so J = -∂H/∂A reuses the model's amplitudes.
 function bond_current_term(m::RiceMeleHubbard1D, i::Int, j::Int)
     d = bond_displacement(m)
     fwd, bwd = _hop_amplitudes(m, i)
