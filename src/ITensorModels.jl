@@ -6,7 +6,7 @@ using ITensorSiteKit: PhysSite
 
 export AbstractLatticeModel, site_type
 export bond_term, boundary_patch, local_ham_terms, build_opsum
-export bond_coupling_term, onsite_term
+export bond_coupling_term, bond_hopping_term, onsite_term
 export bond_current_term
 export onsite_observable_op, build_onsite_observable_opsum
 export TFIM, TFIML, XXZ1D, Heisenberg1D, KitaevBond, LatticeModel
