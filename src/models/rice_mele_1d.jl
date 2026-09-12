@@ -57,6 +57,13 @@ function bond_current_term(m::RiceMele1D, i::Int, j::Int)
     return J
 end
 
+function bond_hopping_term(m::RiceMele1D, i::Int, j::Int)
+    fwd, _ = _hop_amplitudes(m, i)
+    H = OpSum()
+    H += fwd, "Cdag", i, "C", j
+    return H
+end
+
 function bond_coupling_term(m::RiceMele1D, i::Int, j::Int)
     fwd, bwd = _hop_amplitudes(m, i)
     H = OpSum()

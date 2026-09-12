@@ -98,6 +98,20 @@ split protocol consumed by [`ModulatedModel`](@ref).
 function bond_coupling_term end
 
 """
+    bond_hopping_term(model, i, j) -> OpSum
+
+The FORWARD hopping on bond `(i, j)` alone: the part of [`bond_coupling_term`](@ref) that a
+Peierls phase multiplies, without its conjugate and without any density-density piece.
+
+A Trotter gate for a driven chain needs it separately, because the phase is time dependent
+and the amplitude is not: a consumer that has this can scale a cached operator instead of
+rebuilding one per step, and does not have to retype the model's own amplitudes to get it.
+
+Defined for the models that carry a vector potential, where the split has meaning.
+"""
+function bond_hopping_term end
+
+"""
     onsite_term(model, k) -> OpSum
 
 Pure on-site term at site `k` with **full** weight (not halved). For
