@@ -52,7 +52,7 @@ env_cyl_x(x, y) = ssd_axis(x, Lx)
 # the envelope reaches 0 on the inscribed circle and is identically
 # zero outside it (corners are dark).
 function env_sphere_inscribed(x, y)
-    cx = center(Lx);
+    cx = center(Lx)
     cy = center(Ly)
     d = sqrt((x - cx)^2 + (y - cy)^2)
     R = min(Lx, Ly) / 2
@@ -63,7 +63,7 @@ end
 # the envelope only reaches 0 at the corners; the four edge midpoints
 # carry a finite weight. This is what "spherical, no zero rim" looks like.
 function env_sphere_circumscribed(x, y)
-    cx = center(Lx);
+    cx = center(Lx)
     cy = center(Ly)
     d = sqrt((x - cx)^2 + (y - cy)^2)
     R = sqrt((Lx / 2)^2 + (Ly / 2)^2)
@@ -73,7 +73,7 @@ end
 # (5) Spherical SinPower{4}: sharper roll-off at the boundary, broader
 # central plateau (Hotta-Shibata flavour on a disk).
 function env_sphere_sinpow4(x, y)
-    cx = center(Lx);
+    cx = center(Lx)
     cy = center(Ly)
     d = sqrt((x - cx)^2 + (y - cy)^2)
     R = min(Lx, Ly) / 2
@@ -83,7 +83,7 @@ end
 # (6) Spherical SmoothBoundary: flat-1 plateau in the bulk + half-cosine
 # ramp on the rim (Vekic-White on a disk).
 function env_sphere_smooth(x, y)
-    cx = center(Lx);
+    cx = center(Lx)
     cy = center(Ly)
     d = sqrt((x - cx)^2 + (y - cy)^2)
     R = min(Lx, Ly) / 2
