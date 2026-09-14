@@ -1,6 +1,6 @@
 name = "ITensorModels"
 uuid = "ef2189cb-6e0f-43f0-8f34-d6f851ec88d5"
-version = "0.7.33"
+version = "0.7.34"
 authors = ["sota shimozono <shimozono-sota631@g.ecc.u-tokyo.ac.jp>"]
 
 [deps]
@@ -28,7 +28,7 @@ ITensorMPS = "0.3, 0.4"
 ITensorSiteKit = "0.2, 0.3, 0.4"
 ITensors = "0.9"
 LatticeCore = "0.8, 0.10, 0.12"
-QAtlas = "0.13, 0.14, 0.15, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24, 0.25, 0.28, 0.31, 0.33"
+QAtlas = "0.13, 0.14, 0.15, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24, 0.25, 0.28, 0.31, 0.33, 0.34"
 Random = "1"
 TestShards = "0.3"
 julia = "1.10"
