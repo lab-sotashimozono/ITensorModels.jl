@@ -37,10 +37,10 @@ else
 
         mid = N ÷ 2
         state_up = fill("Up", N)
-        flip1 = copy(state_up);
+        flip1 = copy(state_up)
         flip1[mid] = "Dn"
-        flip2 = copy(state_up);
-        flip2[mid] = "Dn";
+        flip2 = copy(state_up)
+        flip2[mid] = "Dn"
         flip2[mid + 1] = "Dn"
 
         dmrgx_kw = (; nsweeps=20, maxdim=60, cutoff=1e-10, normalize=true, outputlevel=0)

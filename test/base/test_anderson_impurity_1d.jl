@@ -57,8 +57,8 @@ end
 @testset "AndersonImpurity1D: U=0 chain = free fermions (analytic GS)" begin
     # U=0, εd=0, V=D/2 -> a uniform N-site tight-binding chain (hopping D/2),
     # two decoupled spins. ε_k = -D cos(kπ/(N+1)); half-filling fills ε<0.
-    Nb = 7;
-    D = 1.0;
+    Nb = 7
+    D = 1.0
     N = Nb + 1
     m = semielliptic_anderson(; Nb, D, U=0.0, εd=0.0, V=D / 2)
     sites = siteinds("Electron", N; conserve_qns=true)
